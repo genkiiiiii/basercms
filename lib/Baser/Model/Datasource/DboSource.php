@@ -4266,6 +4266,11 @@ class DboSource extends DataSource {
 		if(!$encoding) {
 			$encoding = $this->_dbEncToPhp($this->getEncoding());
 		}
+		if($encoding == 'auto') {
+			$data = file_get_contents($path);
+			$encoding = mb_detect_encoding($data);
+			$data = null;
+		}
 		$appEncoding = Configure::read('App.encoding');
 		
 		// ヘッダ取得
@@ -4404,10 +4409,15 @@ class DboSource extends DataSource {
 			}
 		}
 
+		if($encoding == 'UTF-8') {
+			fwrite($fp, pack('C*',0xEF,0xBB,0xBF));	
+		}
+		
 		$head = implode(",", $heads) . "\n";
 		if ($encoding != $this->config['encoding']) {
 			$head = mb_convert_encoding($head, $encoding, $appEncoding);
 		}
+		
 		fwrite($fp, $head);
 
 		// データを書込

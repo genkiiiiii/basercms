@@ -62,6 +62,7 @@ class PagesController extends AppController {
  * @access public
  */
 	public function beforeFilter() {
+		
 		parent::beforeFilter();
 
 		// 認証設定
