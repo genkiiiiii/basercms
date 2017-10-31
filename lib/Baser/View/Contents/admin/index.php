@@ -34,17 +34,7 @@ echo $this->BcForm->input('BcManageContent', array('type' => 'hidden', 'value' =
 
 
 <script type="text/javascript">
-<<<<<<< .merge_file_TDUZJE
 
-=======
-$(function(){
-	if($("#ContentOpen").html()) {
-		$("#ContentFilterBody").show();
-	}
-	$.baserAjaxDataList.init();
-	$.baserAjaxBatch.init({ url: $("#AjaxBatchUrl").html()});
-});
->>>>>>> .merge_file_h9A7b6
 </script>
 
 <div id="AlertMessage" class="message" style="display:none"></div>

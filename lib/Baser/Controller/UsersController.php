@@ -74,7 +74,7 @@ class UsersController extends AppController {
 			/* 認証設定 */
 			// parent::beforeFilterの前に記述する必要あり
 			$this->BcAuth->allow(
-				'admin_login', 'admin_logout', 'admin_login_exec', 'admin_reset_password', 'back_agent'
+				'admin_login', 'admin_logout', 'admin_login_exec', 'admin_reset_password'
 			);
 			if(isset($this->UserGroup)) {
 				$this->set('usePermission', $this->UserGroup->checkOtherAdmins());
@@ -83,7 +83,7 @@ class UsersController extends AppController {
 
 		parent::beforeFilter();
 
-		$this->BcReplacePrefix->allow('login', 'logout', 'login_exec', 'reset_password', 'back_agent');
+		$this->BcReplacePrefix->allow('login', 'logout', 'login_exec', 'reset_password');
 	}
 
 /**
@@ -188,11 +188,11 @@ class UsersController extends AppController {
 		$configs = Configure::read('BcAuthPrefix');
 		if ($this->Session->check('AuthAgent')) {
 			$data = $this->Session->read('AuthAgent');
-			$authPrefix = explode(',', $data['UserGroup']['auth_prefix']);
-			$authPrefix = $authPrefix[0];
-			$this->Session->write('Auth.' . $configs[$authPrefix]['sessionKey'], $data);
+			$this->Session->write(BcAuthComponent::$sessionKey, $data);
 			$this->Session->delete('AuthAgent');
 			$this->setMessage('元のユーザーに戻りました。');
+			$authPrefix = explode(',', $data['UserGroup']['auth_prefix']);
+			$authPrefix = $authPrefix[0];
 		} else {
 			$this->setMessage('不正な操作です。', true);
 			if (!empty($this->request->params['prefix'])) {

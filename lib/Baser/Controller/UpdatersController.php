@@ -16,7 +16,6 @@
  * baserCMSのコアや、プラグインのアップデートを行います
  * 
  * @package	Baser.Controller
- * @property BcManagerComponent $BcManager
  */
 class UpdatersController extends AppController {
 
@@ -461,15 +460,9 @@ class UpdatersController extends AppController {
 		} else {
 			$result = true;
 		}
-<<<<<<< .merge_file_9kNGjp
 		
 		$this->BcManager->deployAdminAssets();
 		
-=======
-
-		$this->BcManager->deployAdminAssets();
-
->>>>>>> .merge_file_QEHJ5E
 		$this->setUpdateLog($name . ' ' . $targetVersion . ' へのアップデートが完了しました。');
 
 		return $result;

@@ -343,11 +343,7 @@ class InstallationsController extends AppController {
 				}
 			}
 
-<<<<<<< .merge_file_rJfwzA
 			$Db = ConnectionManager::getDataSource('default');
-=======
-			$Db = ConnectionManager::getDataSource('baser');
->>>>>>> .merge_file_oRedFF
 			if($Db->config['datasource'] == 'Database/BcPostgres') {
 				$Db->updateSequence();
 			}

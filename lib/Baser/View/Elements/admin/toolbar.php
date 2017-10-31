@@ -34,34 +34,7 @@ if (!empty($currentAuthPrefix['name']) && $currentPrefix != 'front') {
 	$authName = '';
 }
 ?>
-<<<<<<< .merge_file_A50mZF
 
-=======
-<script type="text/javascript">
-$(function(){
-	$('#BcUserMenu').fixedMenu();
-	$('#SystemMenu h2').click(function(){
-		if($(this).next().css('display')=='none') {
-			$(this).next().slideDown(200);
-		} else {
-			$(this).next().slideUp(200);
-		}
-	});
-	$('#SystemMenu ul:first').show();
-	$("#BcUserMenu ul li div ul li").each(function(){
-		if(!$(this).html().replace(/(^\s+)|(\s+$)/g, "")) {
-			$(this).remove();
-		}
-	});
-	$("#BcUserMenu ul li div ul").each(function(){
-		if(!$(this).html().replace(/(^\s+)|(\s+$)/g, "")) {
-			$(this).prev().remove();
-			$(this).remove();
-		}
-	});
-});
-</script>
->>>>>>> .merge_file_ncNpoU
 
 <div id="ToolBar">
 	<div id="ToolbarInner" class="clearfix">
@@ -95,7 +68,7 @@ $(function(){
 				<?php endif ?>
 			</ul>
 		</div>
-		<div id="BcUserMenu">
+		<div id="UserMenu">
 			<ul class="clearfix">
 				<li>
 					<?php if (!empty($user)): ?>

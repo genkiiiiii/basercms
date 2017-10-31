@@ -43,16 +43,6 @@ if (!$isInstalled) {
 App::uses('BaserPluginApp', 'Controller');
 App::uses('BaserPluginAppModel', 'Model');
 
-<<<<<<< .merge_file_Swzwct
-=======
-// パラメータ取得
-$parameter = getPureUrl(Router::getRequest(true));
-Configure::write('BcRequest.pureUrl', $parameter); // requestAction の場合、bootstrapが実行されないので、urlParamを書き換える
-$agent = Configure::read('BcRequest.agent');
-$agentAlias = Configure::read('BcRequest.agentAlias');
-$agentPrefix = Configure::read('BcRequest.agentPrefix');
-$authPrefixes = Configure::read('BcAuthPrefix');
->>>>>>> .merge_file_KMXCAT
 
 /**
  * アップデーター

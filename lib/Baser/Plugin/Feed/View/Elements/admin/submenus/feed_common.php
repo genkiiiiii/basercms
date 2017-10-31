@@ -23,11 +23,7 @@
 			<li><?php $this->BcBaser->link('フィード設定一覧', array('action' => 'index')) ?></li>
 			<li><?php $this->BcBaser->link('フィード設定新規追加', array('action' => 'add')) ?></li>
 <?php if ($this->params['controller'] == 'feed_configs' && $this->action == 'admin_index'): ?>
-<<<<<<< .merge_file_5IAkc0
 			<li><?php $this->BcBaser->link('フィードキャッシュ削除', array('action' => 'delete_cache'), ['class' => 'submit-token'], 'フィードのキャッシュを削除します。いいですか？') ?></li>
-=======
-			<li><?php $this->BcBaser->link('フィードキャッシュ削除', array('action' => 'delete_cache'), 'フィードのキャッシュを削除します。いいですか？') ?></li>
->>>>>>> .merge_file_eoQGhO
 <?php endif ?>
 		</ul>
 	</td>

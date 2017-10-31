@@ -4432,21 +4432,13 @@ class DboSource extends DataSource {
 			}
 		}
 
-<<<<<<< .merge_file_TJbboR
 		if($options['encoding'] == 'UTF-8') {
 			fwrite($fp, pack('C*',0xEF,0xBB,0xBF));
 		}
-=======
-		if($encoding == 'UTF-8') {
-			fwrite($fp, pack('C*',0xEF,0xBB,0xBF));	
-		}
-		
->>>>>>> .merge_file_PgOvaC
 		$head = implode(",", $heads) . "\n";
 		if ($options['encoding'] != $this->config['encoding']) {
 			$head = mb_convert_encoding($head, $options['encoding'], $appEncoding);
 		}
-		
 		fwrite($fp, $head);
 
 		// データを書込
