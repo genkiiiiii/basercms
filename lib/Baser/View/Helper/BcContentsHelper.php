@@ -224,13 +224,16 @@ class BcContentsHelper extends AppHelper {
 	}
 
 /**
- * フルURLを取得する
+ * コンテンツ管理上のURLを元に正式なURLを取得する
  *
- * @param string $url
- * @param bool $useSubDomain
+ * @param string $url コンテンツ管理上のURL
+ * @param bool $full http からのフルのURLかどうか
+ * @param bool $useSubDomain サブドメインを利用しているかどうか
+ * @param bool $base $full が false の場合、ベースとなるURLを含めるかどうか
+ * @return string URL
  */
-	public function getUrl($url, $full = false, $useSubDomain = false) {
-		return $this->_Content->getUrl($url, $full, $useSubDomain);
+	public function getUrl($url, $full = false, $useSubDomain = false, $base = false) {
+		return $this->_Content->getUrl($url, $full, $useSubDomain, $base);
 	}
 
 /**
@@ -515,6 +518,26 @@ class BcContentsHelper extends AppHelper {
 			} else {
 				return $content;
 			}
+		} else {
+			return false;
+		}
+	}
+
+/**
+ * IDがコンテンツ自身の親のIDかを判定する
+ *
+ * @param $id コンテンツ自身のID
+ * @param $parentId 親として判定するID
+ * @return bool
+ */
+	public function isParentId($id, $parentId) {
+		$parentIds = $this->_Content->getPath($id, ['id'], -1);
+		if(!$parentIds) {
+			return false;
+		}
+		$parentIds = Hash::extract($parentIds, '{n}.Content.id');
+		if($parentIds && in_array($parentId, $parentIds)) {
+			return true;
 		} else {
 			return false;
 		}

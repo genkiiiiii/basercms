@@ -385,7 +385,7 @@ class BcBaserHelper extends AppHelper {
  * @return void
  */
 	public function title($separator = '｜', $categoryTitleOn = null) {
-		echo '<title>' . strip_tags($this->getTitle($separator, $categoryTitleOn)) . "</title>\n";
+		echo '<title>' . h($this->getTitle($separator, $categoryTitleOn)) . "</title>\n";
 	}
 
 /**
@@ -2657,15 +2657,18 @@ END_FLASH;
 	}
 
 /**
- * コンテンツ管理用のURLを取得する
+ * コンテンツ管理用のURLより、正式なURLを取得する
  * 
  * @param string $url コンテンツ管理用URLの元データ
  *	省略時は request より現在のデータを取得
  *	request が取得できない場合は、トップページのURLを設定
- * @param bool $full フルパスかどうかを指定
+ * @param bool $full http からのフルのURLかどうか
+ * @param bool $useSubDomain サブドメインを利用しているかどうか
+ * 	省略時は現在のサイト情報から取得する
+ * @param bool $base $full が false の場合、ベースとなるURLを含めるかどうか
  * @return string
  */
-	public function getContentsUrl($url = null, $full = false) {
+	public function getContentsUrl($url = null, $full = false, $useSubDomain = null, $base = false) {
 		if(!$url) {
 			if(!empty($this->request->params['Content']['url'])) {
 				$url = $this->request->params['Content']['url'];
@@ -2673,8 +2676,11 @@ END_FLASH;
 				$url = '/';
 			}
 		}
-		$site = BcSite::findCurrent();
-		return $this->BcContents->getUrl($url, $full, $site->useSubDomain);
+		if(is_null($useSubDomain)) {
+			$site = BcSite::findCurrent();
+			$useSubDomain = $site->useSubDomain;
+		}
+		return $this->BcContents->getUrl($url, $full, $useSubDomain, $base);
 	}
 
 /**
@@ -2718,6 +2724,17 @@ END_FLASH;
  */
 	public function getContentByEntityId($id, $contentType, $field = null){
 		return $this->BcContents->getContentByEntityId($id,$contentType, $field);
+	}
+
+/**
+ * IDがコンテンツ自身の親のIDかを判定する
+ *
+ * @param $id コンテンツ自身のID
+ * @param $parentId 親として判定するID
+ * @return bool
+ */
+	public function isContentsParentId($id, $parentId) {
+		return $this->BcContents->isParentId($id, $parentId);
 	}
 
 }

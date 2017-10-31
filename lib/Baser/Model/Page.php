@@ -78,20 +78,19 @@ class Page extends AppModel {
  *
  * @var array
  */
-	public $validate = array(
-		'contents' => array(
-			array('rule' => array('phpValidSyntax'),
-				'message' => 'PHPの構文エラーが発生しました。'),
-			array('rule' => array('maxByte', 64000),
-				'message' => '本稿欄に保存できるデータ量を超えています。')
-		),
-		'draft' => array(
-			array('rule' => array('phpValidSyntax'),
-				'message' => 'PHPの構文エラーが発生しました。'),
-			array('rule' => array('maxByte', 64000),
-				'message' => '草稿欄に保存できるデータ量を超えています。')
-		),
-	);
+	public $validate = [
+		'id' => [
+			['rule' => 'numeric', 'on' => 'update', 'message' => 'IDに不正な値が利用されています。']
+		],
+		'contents' => [
+			['rule' => 'phpValidSyntax', 'message' => 'PHPの構文エラーが発生しました。'],
+			['rule' => ['maxByte', 64000], 'message' => '本稿欄に保存できるデータ量を超えています。']
+		],
+		'draft' => [
+			['rule' => 'phpValidSyntax', 'message' => 'PHPの構文エラーが発生しました。'],
+			['rule' => ['maxByte', 64000], 'message' => '草稿欄に保存できるデータ量を超えています。']
+		]
+	];
 
 /**
  * beforeSave
@@ -146,14 +145,15 @@ class Page extends AppModel {
  */
 	public function checkOpenPageFile($data) {
 		$path = $this->getPageFilePath($data);
-		$File = new File($path);
-		if ($File->open('w')) {
-			$File->close();
-			$File = null;
-			return true;
-		} else {
-			return false;
+		if($path) {
+			$File = new File($path);
+			if ($File->open('w')) {
+				$File->close();
+				$File = null;
+				return true;
+			}
 		}
+		return false;
 	}
 
 /**
@@ -301,7 +301,9 @@ class Page extends AppModel {
 
 		// 新しいページファイルのパスを取得する
 		$newPath = $this->getPageFilePath($data);
-
+		if(!$newPath) {
+			return false;
+		}
 		// テーマやファイル名が変更された場合は元ファイルを削除する
 		if ($this->oldPath && ($newPath != $this->oldPath)) {
 			$oldFile = new File($this->oldPath);
@@ -338,6 +340,9 @@ class Page extends AppModel {
 		}
 		
 		$url = $this->Content->createUrl($data['Content']['parent_id'], 'Core', 'ContentFolder');
+		if(!$url) {
+			return false;
+		}
 		if($url != '/') {
 			if($data['Content']['site_id'] != 0) {
 				$site = BcSite::findByUrl($url);

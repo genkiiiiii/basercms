@@ -860,6 +860,9 @@ class BcAppModel extends Model {
 			'conditions' => [$this->alias . '.id' => $id],
 			'fields' => [$this->alias . '.id', $this->alias . '.sort']
 		]);
+		if(!$current) {
+			return false;
+		}
 
 		// 変更相手のデータを取得
 		if ($offset > 0) { // DOWN
@@ -1669,11 +1672,11 @@ class BcAppModel extends Model {
  * レコードデータの消毒をおこなう
  * @return array
  */
-	public function sanitizeRecord($datas) {
-		foreach ($datas as $key => $data) {
-				$datas[$key] = $this->sanitize($data);
+	public function sanitizeRecord($record) {
+		foreach ($record as $key => $value) {
+				$record[$key] = $this->sanitize($value);
 		}
-		return $datas;
+		return $record;
 	}
 
 /**
@@ -1682,16 +1685,14 @@ class BcAppModel extends Model {
  * @param $data
  * @return mixed|string
  */
-	public function sanitize($data) {
-		if (!is_array($data)) {
-			// エラー時用のサニタイズ処理を一旦元の形式に復元した上で再度サイニタイズ処理をかける。
-			$data = str_replace("&lt;!--", "<!--", $data);
-			$data = htmlspecialchars($data);
-			$data = str_replace("'", "&#39;", $data);
-			//$data = str_replace("\n","<br />",$data);
-			return $data;
+	public function sanitize($value) {
+		if (!is_array($value)) {
+			// 既に htmlspecialchars を実行済のものについて一旦元の形式に復元した上で再度サイニタイズ処理をかける。
+			$value = str_replace("&lt;!--", "<!--", $value);
+			$value = htmlspecialchars($value);
+			return $value;
 		}else {
-			return $data;
+			return $value;
 		}
 	}
 
