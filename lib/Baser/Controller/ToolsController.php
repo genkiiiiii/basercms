@@ -145,12 +145,19 @@ class ToolsController extends AppController {
 		@unlink($targetPath);
 
 		$result = true;
+<<<<<<< .merge_file_eUhFH7
 		$db = ConnectionManager::getDataSource('default');
 		$db->begin();
 		if (!$this->_loadBackup($tmpPath . 'core' . DS, $data['Tool']['encoding'])) {
 			$result = false;
 		}
 		if (!$this->_loadBackup($tmpPath . 'plugin' . DS, $data['Tool']['encoding'])) {
+=======
+		if (!$this->_loadBackup($tmpPath . 'baser' . DS, 'baser', $data['Tool']['encoding'])) {
+			$result = false;
+		}
+		if (!$this->_loadBackup($tmpPath . 'plugin' . DS, 'plugin', $data['Tool']['encoding'])) {
+>>>>>>> .merge_file_psa3tA
 			$result = false;
 		}
 		if($result) {
@@ -171,7 +178,11 @@ class ToolsController extends AppController {
  * @param string $configKeyName DB接続名
  * @return boolean
  */
+<<<<<<< .merge_file_eUhFH7
 	protected function _loadBackup($path, $encoding) {
+=======
+	protected function _loadBackup($path, $configKeyName, $encoding) {
+>>>>>>> .merge_file_psa3tA
 		$Folder = new Folder($path);
 		$files = $Folder->read(true, true);
 		if (!is_array($files[1])) {
@@ -213,12 +224,16 @@ class ToolsController extends AppController {
 		/* CSVファイルを読み込む */
 		foreach ($files[1] as $file) {
 			if (preg_match("/\.csv$/", $file)) {
+<<<<<<< .merge_file_eUhFH7
 				try {
 					if (!$db->loadCsv(array('path' => $path . $file, 'encoding' => $encoding))) {
 						$result = false;
 						continue;
 					}
 				} catch (Exception $e) {
+=======
+				if (!$db->loadCsv(array('path' => $path . $file, 'encoding' => $encoding))) {
+>>>>>>> .merge_file_psa3tA
 					$result = false;
 					$this->log($e->getMessage());
 				}
@@ -238,12 +253,20 @@ class ToolsController extends AppController {
 		$version = str_replace(' ', '_', $this->getBaserVersion());
 		$this->_resetTmpSchemaFolder();
 		clearAllCache();
+<<<<<<< .merge_file_eUhFH7
 		$this->_writeBackup($tmpDir . 'core' . DS, '', $encoding);
+=======
+		$this->_writeBackup('baser', $tmpDir . 'baser' . DS, '', $encoding);
+>>>>>>> .merge_file_psa3tA
 		$Plugin = ClassRegistry::init('Plugin');
 		$plugins = $Plugin->find('all');
 		if ($plugins) {
 			foreach ($plugins as $plugin) {
+<<<<<<< .merge_file_eUhFH7
 				$this->_writeBackup($tmpDir . 'plugin' . DS, $plugin['Plugin']['name'], $encoding);
+=======
+				$this->_writeBackup('plugin', $tmpDir . 'plugin' . DS, $plugin['Plugin']['name'], $encoding);
+>>>>>>> .merge_file_psa3tA
 			}
 		}
 		// ZIP圧縮して出力
@@ -262,14 +285,39 @@ class ToolsController extends AppController {
  * @param string $path
  * @return boolean
  */
+<<<<<<< .merge_file_eUhFH7
 	protected function _writeBackup($path, $plugin = '', $encoding) {
 		$db = ConnectionManager::getDataSource('default');
+=======
+	protected function _writeBackup($configKeyName, $path, $plugin = '', $encoding) {
+		$db = ConnectionManager::getDataSource($configKeyName);
+>>>>>>> .merge_file_psa3tA
 		$db->cacheSources = false;
 		$tables = $db->listSources();
 		$tableList = getTableList();
 		foreach ($tables as $table) {
+<<<<<<< .merge_file_eUhFH7
 			if((!$plugin && in_array($table, $tableList['core']) || ($plugin && in_array($table, $tableList['plugin'])))) {
 				$table = str_replace($db->config['prefix'], '', $table);
+=======
+			if (preg_match("/^" . $db->config['prefix'] . "([^_].+)$/", $table, $matches) &&
+				!preg_match("/^" . Configure::read('BcEnv.pluginDbPrefix') . "[^_].+$/", $matches[1])) {
+				$table = $matches[1];
+				if ($plugin) {
+					if (!preg_match('/^' . $pluginPrefix . '([^_].+)$/', $table)) {
+						// メールプラグインの場合、先頭に、「mail_」 がなくとも 末尾にmessagesがあれば対象とする
+						if ($plugin == 'Mail') {
+							if (!preg_match("/messages$/", $table)) {
+								continue;
+							}
+						} else {
+							if(Inflector::tableize($plugin) != $table) {
+								continue;
+							}
+						}
+					}
+				}
+>>>>>>> .merge_file_psa3tA
 				if (!$db->writeSchema(array('path' => $path, 'table' => $table, 'plugin' => $plugin))) {
 					return false;
 				}

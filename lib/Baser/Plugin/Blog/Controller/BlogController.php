@@ -540,7 +540,40 @@ class BlogController extends BlogAppController {
 		}
 		unset($options['listCount'], $options['num']);
 
+<<<<<<< .merge_file_qfH4er
 		$this->paginate = $options;
+=======
+		$this->BlogPost->expects($expects, false);
+
+		if (strtoupper($direction) == 'RANDOM') {
+			$db = ConnectionManager::getDataSource($this->BlogPost->useDbConfig);
+			$datasouce = strtolower(preg_replace('/^Database\/Bc/', '', $db->config['datasource']));
+			switch ($datasouce) {
+				case 'mysql':
+					$order = 'RAND()';
+					break;
+				case 'postgres':
+					$order = 'RANDOM()';
+					break;
+				case 'sqlite':
+					$order = 'RANDOM()';
+					break;
+			}
+		} else {
+			$order = "BlogPost.{$sort} {$direction}, BlogPost.id {$direction}";
+		}
+
+		// 毎秒抽出条件が違うのでキャッシュしない
+		$this->paginate = array(
+			'conditions' => $conditions,
+			'fields' => array(),
+			'order' => $order,
+			'limit' => $num,
+			'recursive' => 1,
+			'cache' => false
+		);
+
+>>>>>>> .merge_file_qScakA
 		return $this->paginate('BlogPost');
 	}
 
@@ -736,8 +769,16 @@ class BlogController extends BlogAppController {
 		$datas = $this->_getBlogPosts(['num' => $limit]);
 
 		$this->set('posts', $datas);
-
-		$this->render($this->blogContent['BlogContent']['template'] . DS . $template);
+		if ($blogContentId != $this->blogContent['BlogContent']['id']) {
+			$blogContent = $this->BlogContent->find("first", array(
+				"conditions" => array(
+					'BlogContent.id' => $blogContentId,
+				)
+			));
+			$this->render($blogContent['BlogContent']['template'] . DS . $template);
+		} else {
+			$this->render($this->blogContent['BlogContent']['template'] . DS . $template);
+		}
 	}
 
 /**

@@ -419,9 +419,14 @@ class BcAppModel extends Model {
 						continue;
 					}
 
+<<<<<<< .merge_file_KzBro6
 					if (!$db->loadCsv(['path' => $path . DS . $file, 'encoding' => 'auto'])) {
 						$result = false;
 						break;
+=======
+					if (!$db->loadCsv(array('path' => $path . DS . $file, 'encoding' => 'auto'))) {
+						return false;
+>>>>>>> .merge_file_X2zwHi
 					}
 				}
 			}
@@ -904,6 +909,8 @@ class BcAppModel extends Model {
 		]);
 
 		// 全てのデータを更新
+		$dataSource = $this->getDataSource();
+		$dataSource->begin();
 		foreach ($datas as $data) {
 			if ($data[$this->alias]['sort'] == $currentSort) {
 				$data[$this->alias]['sort'] = $targetSort;
@@ -915,9 +922,11 @@ class BcAppModel extends Model {
 				}
 			}
 			if (!$this->save($data, false)) {
+				$dataSource->rollback();
 				return false;
 			}
 		}
+		$dataSource->commit();
 
 		return true;
 	}

@@ -194,6 +194,7 @@ $config['BcAgent'] = array(
 	)
 );
 
+<<<<<<< .merge_file_SXlGmq
 //p($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 $config['BcLang'] = [
 	'english' => [
@@ -363,3 +364,11 @@ $config['BcShortCode']['Core'] = [
 $config['BcSecurity'] = [
 	'csrfExpires' => '+4 hours'
 ];
+=======
+/**
+ * セキュリティ設定
+ */
+$config['BcSecurity'] = array(
+	'csrfExpires' => '+4 hours'
+);
+>>>>>>> .merge_file_revv7v

@@ -409,9 +409,15 @@ class BlogHelperTest extends BaserTestCase {
 
 	public function prevLinkDataProvider() {
 		return array(
+<<<<<<< .merge_file_sALzhP
 			array(1, 4, '9000-08-10 18:58:07', '<a href="/news/archives/4" class="prev-link">≪ ４記事目</a>'),
 			array(1, 3, '1000-08-10 18:58:07', ''),
 			array(2, 2, '9000-08-10 18:58:07', '<a href="/news/archives/8" class="prev-link">≪ ８記事目</a>'),
+=======
+			array(1, 4, '9000-08-10 18:58:07', '<a href="/news/archives/1" class="prev-link">≪ ホームページをオープンしました</a>'),
+			array(1, 3, '1000-08-10 18:58:07', ''),
+			array(2, 2, '9000-08-10 18:58:07', '<a href="/news/archives/3" class="prev-link">≪ 新商品を販売を開始しました。</a>'),
+>>>>>>> .merge_file_41jBpY
 			array(2, 1, '1000-08-10 18:58:07', ''),
 		);
 	}
@@ -439,7 +445,32 @@ class BlogHelperTest extends BaserTestCase {
 			array(1, 1, '9000-08-10 18:58:07', ''),
 			array(1, 2, '1000-08-10 18:58:07', '<a href="/news/archives/1" class="next-link">ホームページをオープンしました ≫</a>'),
 			array(2, 3, '9000-08-10 18:58:07', ''),
+<<<<<<< .merge_file_sALzhP
 			array(2, 4, '1000-08-10 18:58:07', '<a href="/news/archives/7" class="next-link">７記事目 ≫</a>'),
+=======
+			array(2, 4, '1000-08-10 18:58:07', '<a href="/news/archives/2" class="next-link">新商品を販売を開始しました。 ≫</a>'),
+		);
+	}
+
+/**
+ * レイアウトテンプレートを取得
+ * 
+ * @param string $theme テーマ名
+ * @param array $expected 期待値
+ * @dataProvider getLayoutTemplatesDataProvider
+ */
+	public function testGetLayoutTemplates($theme, $expected) {
+		$this->Blog->BcBaser->siteConfig['theme'] = $theme;
+		$result = $this->Blog->getLayoutTemplates();
+		$this->assertEqual($result, $expected, 'レイアウトテンプレートを正しく取得できません');
+
+	}
+
+	public function getLayoutTemplatesDataProvider() {
+		return array(
+			array('nada-icons', array('default' => 'default', 'ajax' => 'ajax', 'empty' => 'empty', 'error' => 'error')),
+			array('bccolumn', array('default' => 'default', 'left_column' => 'left_column', 'right_column' => 'right_column', 'ajax' => 'ajax', 'empty' => 'empty', 'error' => 'error')),
+>>>>>>> .merge_file_41jBpY
 		);
 	}
 

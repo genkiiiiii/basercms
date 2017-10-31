@@ -11,9 +11,194 @@
  */
 
 /**
+<<<<<<< .merge_file_e0dXXd
  * [ADMIN] ページ登録・編集フォーム
  * 
  * @var BcAppView $this
+=======
+ * 連動機能変更時イベント
+ */
+	$("#PageUnlinkedMobile").change(setStateReflectMobile);
+	$("#PageUnlinkedSmartphone").click(setStateReflectSmartphone);
+	setStateReflectMobile();
+	setStateReflectSmartphone(); 
+});
+/**
+ * モバイル反映欄の表示設定
+ */
+function pageCategoryIdChangeHandler() {
+
+	var pageType = 1;
+	var previewWidth;
+	
+	if($("#ReflectMobileOn").html() || $("#ReflectSmartphoneOn").html()) { 
+
+		var pageCategoryId = $("#PagePageCategoryId").val();
+
+		if($('input[name="data[Page][page_type]"]:checked').val() == 2 && !pageCategoryId) {
+			pageCategoryId = $("#RootMobileId").html();
+		} else if($('input[name="data[Page][page_type]"]:checked').val() == 3 && !pageCategoryId) {
+			pageCategoryId = $("#RootSmartphoneId").html();
+		}
+
+		// モバイルカテゴリ判定
+		if($('input[name="data[Page][page_type]"]:checked').val() == 2) {
+			pageType = 2;
+		} else if($('input[name="data[Page][page_type]"]:checked').val() == 3) {
+			pageType = 3;
+		}
+
+		// モバイルカテゴリを選択した場合は表示しない
+		if(pageType != 2 && $("#Action").html() == 'admin_edit'){
+			$.ajax({
+				type: "GET",
+				url: $("#CheckAgentPageAddableUrl").html()+'/mobile/'+pageCategoryId,
+				beforeSend: function() {
+					$("#AjaxLoader").show();
+				},
+				success: function(result){
+					if(result) {
+						changeStateMobile(pageType, true);
+					} else {
+						changeStateMobile(pageType, false);
+					}
+				},
+				complete: function() {
+					$("#AjaxLoader").hide();
+				}
+			});
+		}else{
+			changeStateMobile(pageType, false);
+		}
+		// スマートフォンカテゴリを選択した場合は表示しない
+		if(pageType != 3 && $("#Action").html() == 'admin_edit'){
+			$.ajax({
+				type: "GET",
+				url: $("#CheckAgentPageAddableUrl").html()+'/smartphone/'+pageCategoryId,
+				beforeSend: function() {
+					$("#AjaxLoader").show();
+				},
+				success: function(result){
+					if(result) {
+						changeStateSmartphone(pageType, true);
+					} else {
+						changeStateSmartphone(pageType, false);
+					}
+				},
+				complete: function() {
+					$("#AjaxLoader").hide();
+				}
+			});
+		}else{
+			changeStateSmartphone(pageType, false);
+		}
+
+	}
+	
+	// プレビューをモバイル用にリサイズする
+	if(pageType == 2) {
+		previewWidth = '270px';
+	}else if(pageType == 3) {
+		previewWidth = '350px';
+	} else {
+		previewWidth = '90%';
+	}
+
+	$("#LinkPreview").colorbox({width: previewWidth, height:"90%", iframe:true,
+		onCleanup: function() {
+			$.bcToken.update(function(){
+				$("input[name='data[_Token][key]']").val($.bcToken.key);
+			}, {loaderType: 'none'});
+		}
+	});
+	
+}
+
+/**
+ * モバイルコピー機能の表示設定
+ */
+function setStateReflectMobile() {
+
+	if (!$("#PageUnlinkedMobile").size() || $("#PageUnlinkedMobile").attr('checked')) {
+		changeStateReflectMobile(true);
+	} else {
+		changeStateReflectMobile(false);
+	}
+	
+}
+/**
+ * スマホコピー機能の表示設定
+ */
+function setStateReflectSmartphone() {
+
+	if (!$("#PageUnlinkedSmartphone").size() || $("#PageUnlinkedSmartphone").attr('checked')) {
+		changeStateReflectSmartphone(true);
+	} else {
+		changeStateReflectSmartphone(false);
+	}
+  
+} 
+/**
+ * モバイルオプション表示切り替え
+ */
+function changeStateMobile(pageType, use) {
+ 
+	if(use) {
+		if(pageType == 2 || pageType == 3) {
+			if($("#PageUnlinkedMobile").attr('checked')) {
+				$("#RowMobile").show();
+				$("#DivUnlinkedMobile").hide();
+			} else {
+				$("#RowMobile").hide();
+			}
+		} else {
+			$("#RowMobile").show();
+		}
+	}else{
+		$("#RowMobile").hide();
+	}
+
+} 
+
+/**
+ * スマートフォンオプション表示切り替え
+ */
+function changeStateSmartphone(pageType, use) {
+  
+	if(use) {
+		if(pageType == 2 || pageType == 3) {
+			if($("#PageUnlinkedSmartphone").attr('checked')) {
+				$("#RowSmartphone").show();
+				$("#DivUnlinkedSmartphone").hide();
+			} else {
+				$("#RowSmartphone").hide();
+			}
+		} else {
+			$("#RowSmartphone").show();
+		}
+	}else{
+		$("#RowSmartphone").hide();
+	}
+  
+} 
+
+/**
+ * モバイルコピー機能表示切り替え
+ */
+function changeStateReflectMobile(use) {
+
+	if(use) {
+		$("#DivReflectMobile").show();
+	}else{
+		$("#PageReflectMobile").attr('checked', false);
+		$("#DivReflectMobile").hide();
+	}
+  
+} 
+
+/**
+ * スマートフォンコピー機能表示切り替え
+>>>>>>> .merge_file_ISDO3c
  */
 $this->BcBaser->css('admin/ckeditor/editor', array('inline' => true));
 $this->BcBaser->js('admin/pages/edit', false);

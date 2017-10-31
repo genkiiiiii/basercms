@@ -26,6 +26,109 @@ $this->BcBaser->css('admin/login', ['inline' => false]);
 $this->BcBaser->js('admin/users/login', false);
 ?>
 
+<<<<<<< .merge_file_dgk15T
+=======
+<script type="text/javascript">
+
+	window.onpageshow = loadInit;
+	$(window).load(loadInit);
+
+	function loadInit(){
+		//$("#BtnLogin").removeAttr('disabled');
+		var getTokenUrl = '<?php echo $this->BcBaser->getUrl('/mail/mail/ajax_get_token') ?>';
+		$.ajaxSetup({cache: false});
+		$.get(getTokenUrl, function(result) {
+			$('input[name="data[_Token][key]"]').val(result);
+			$('input[type="submit"]').removeAttr('disabled');
+		});
+	}
+	
+	$(function(){
+
+	if($("#LoginCredit").html() == 1) {
+		$("body").hide();
+	}
+	$("body").prepend($("#Login"));
+	$("#"+$("#UserModel").html()+"Name").focus();
+	changeNavi("#"+$("#UserModel").html()+"Name");
+	changeNavi("#"+$("#UserModel").html()+"Password");
+
+	$("#"+$("#UserModel").html()+"Name,#"+$("#UserModel").html()+"Password").bind('keyup', function(){
+		if($(this).val()) {
+			$(this).prev().hide();
+		} else {
+			$(this).prev().show();
+		}
+	});
+
+	$("#Login").click(function(){
+		changeView(false);
+	});
+
+	$("#LoginInner").click(function(e){
+		if (e && e.stopPropagation) {
+			e.stopPropagation();
+		} else {
+			window.event.cancelBubble = true;
+		}
+	});
+
+	if($("#LoginCredit").html() == 1) {
+		$("body").append($("<div>&nbsp;</div>").attr('id', 'Credit').show());
+		$("#LoginInner").css('color', '#FFF');
+		$("#HeaderInner").css('height', '50px');
+		$("#Logo").css('position', 'absolute');
+		$("#Logo").css('z-index', '10000');
+		changeView($("#LoginCredit").html());
+		// 本体がない場合にフッターが上にあがってしまうので一旦消してから表示
+		$("body").fadeIn(50);
+	}
+		
+	$("#BtnLogin").click(function(){
+		$("#BtnLogin").attr('disabled', 'disabled');
+		$("#UserLoginForm").submit();
+	});
+
+	function changeNavi(target){
+		if($(target).val()) {
+			$(target).prev().hide();
+		} else {
+			$(target).prev().show();
+		}
+	}
+	function changeView(creditOn) {
+		if(creditOn) {
+			credit();
+		} else {
+			openCredit();
+		}
+	}
+	function openCredit(completeHandler) {
+
+		if(!$("#Credit").size()) {
+			return;
+		}
+
+		$("#LoginInner").css('color', '#333');
+		$("#HeaderInner").css('height', 'auto');
+		$("#Logo").css('position', 'relative');
+		$("#Logo").css('z-index', '0');
+		$("#Wrap").css('height', '280px');
+		if(completeHandler) {
+			if($("#Credit").length) {
+				$("#Credit").fadeOut(1000, completeHandler);
+			}
+			completeHandler();
+		} else {
+			if($("#Credit").length) {
+				$("#Credit").fadeOut(1000);
+			}
+		}
+	}
+});
+
+</script>
+>>>>>>> .merge_file_vqRQve
 
 <div id="UserModel" style="display:none"><?php echo $userModel ?></div>
 <div id="LoginCredit" style="display:none"><?php echo $this->BcBaser->siteConfig['login_credit'] ?></div>

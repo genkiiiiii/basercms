@@ -61,6 +61,7 @@ class PagesController extends AppController {
  * @return void
  */
 	public function beforeFilter() {
+		
 		parent::beforeFilter();
 
 		// 認証設定
@@ -288,6 +289,44 @@ class PagesController extends AppController {
 		if (!empty($path[$count - 1])) {
 			$titleForLayout = Inflector::humanize($path[$count - 1]);
 		}
+<<<<<<< .merge_file_qRE39K
+=======
+
+		// CUSTOMIZE ADD 2014/07/02 ryuring
+		// >>>
+		$agentAlias = Configure::read('BcRequest.agentAlias');
+		$agent = Configure::read('BcRequest.agent');
+
+		if ($agentAlias) {
+			if($agent && $this->siteConfigs['linked_pages_' . $agent]) {
+				$checkUrl = $url;
+			} else {
+				$checkUrl = '/' . $agentAlias . $url;
+			}
+		} else {
+			$checkUrl = $url;
+		}
+
+		// 固定ページを保存する際、非公開の場合でも、検索用データを作成時に
+		// requestAction で呼ばれる為、requestAction時には無視する仕様とする
+		if(empty($this->request->params['requested']) && !$this->Page->checkPublish($checkUrl)) {
+			$this->notFound();
+		}
+		
+		// キャッシュ設定
+		// TODO 手法検討要
+		// Consoleから requestAction で呼出された場合、getCacheTimeがうまくいかない
+		// Consoleの場合は実行しない
+		if (!isset($_SESSION['Auth']['User']) && !isConsole()) {
+			$this->helpers[] = 'BcCache';
+			$this->cacheAction = $this->Page->getCacheTime($checkUrl);
+		}
+
+		// ナビゲーションを取得
+		$this->crumbs = $this->_getCrumbs($url);
+
+		$this->subMenuElements = array('default');
+>>>>>>> .merge_file_UqzNcN
 		// <<<
 		
 		$this->set(array(

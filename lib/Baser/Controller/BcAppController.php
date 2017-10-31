@@ -448,6 +448,27 @@ class BcAppController extends Controller {
 			}
 		}
 
+<<<<<<< .merge_file_2ncL8K
+=======
+		//Securityコンポーネント設定
+		$this->Security->blackHoleCallback = '_blackHoleCallback';
+		$csrfExpires = Configure::read('BcSecurity.csrfExpires');
+		if(!$csrfExpires) {
+			$csrfExpires = "+4 hours";
+		}
+		$this->Security->csrfExpires = $csrfExpires;
+
+		// SSLリダイレクト設定
+		if (Configure::read('BcApp.adminSsl') && !empty($this->request->params['admin'])) {
+			$adminSslMethods = array_filter(get_class_methods(get_class($this)), array($this, '_adminSslMethods'));
+			if ($adminSslMethods) {
+				$this->Security->requireSecure = $adminSslMethods;
+			}
+		}
+
+		$this->_isRequireCheckSubmitToken();
+
+>>>>>>> .merge_file_ZueMxh
 	}
 
 /**
@@ -1603,6 +1624,7 @@ class BcAppController extends Controller {
 		}
 	}
 
+<<<<<<< .merge_file_2ncL8K
 /**
  * リファラチェックを行う
  *
@@ -1612,6 +1634,45 @@ class BcAppController extends Controller {
 		$siteDomain = BcUtil::getCurrentDomain();
 		if(empty($_SERVER['HTTP_REFERER'])) {
 			return false;
+=======
+	protected function _isRequireCheckSubmitToken() {
+		if($this->name == 'CakeError') {
+			return;
+		}
+		$controller = $this->request->params['controller'];
+		$action = $this->request->params['action'];
+		$requires = array(
+			'dashboard' => array('admin_del'),
+			'editor_templates' => array('admin_delete', 'admin_ajax_delete'),
+			'pages' => array('admin_delete', 'admin_ajax_copy', 'admin_ajax_publish', 'admin_ajax_unpublish', 'admin_ajax_update_sort', 'admin_ajax_delete', 'admin_entry_page_files', 'admin_write_page_files'),
+			'page_categories' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_copy', 'admin_ajax_down', 'admin_ajax_up'),
+			'permissions' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_copy', 'admin_ajax_unpublish', 'admin_ajax_publish'),
+			'plugins' => array('admin_ajax_delete_file', 'admin_ajax_delete'),
+			'search_indices' => array('admin_ajax_delete'),
+			'theme_files' => array('admin_del', 'admin_ajax_del', 'admin_copy_to_theme', 'admin_copy_folder_to_theme'),
+			'themes' => array('admin_reset_data', 'admin_ajax_copy', 'admin_ajax_delete', 'admin_del', 'admin_apply'),
+			'user_groups' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_copy'),
+			'users' => array('admin_ajax_delete', 'admin_delete'),
+			'widget_areas' => array('admin_ajax_delete', 'admin_delete', 'admin_del_widget'),
+			'blog_categories' => array('admin_ajax_delete', 'admin_delete'),
+			'blog_comments' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_unpublish', 'admin_ajax_publish'),
+			'blog_contents' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_copy'),
+			'blog_posts' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_unpublish', 'admin_ajax_publish', 'admin_ajax_copy'),
+			'blog_tags' => array('admin_delete', 'admin_ajax_delete'),
+			'feed_configs' => array('admin_ajax_delete', 'admin_delete'),
+			'feed_details' => array('admin_ajax_delete', 'admin_delete'),
+			'mail_contents' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_copy'),
+			'mail_fields' => array('admin_ajax_delete', 'admin_delete', 'admin_ajax_copy', 'admin_ajax_unpublish', 'admin_ajax_publish'),
+			'mail_messages' => array('admin_ajax_delete', 'admin_delete'),
+			'uploader_categories' => array('admin_delete', 'admin_ajax_delete', 'admin_ajax_copy'),
+			'uploader_files' => array('admin_delete'),
+			'menus' => array('admin_delete', 'admin_ajax_delete'),
+		);
+		if($controller == 'tools' && $action == 'admin_log' && $this->request->params['pass'][0] == 'delete') {
+			$this->_checkSubmitToken();
+		} elseif($action == 'admin_ajax_batch') {
+			$this->_checkSubmitToken();
+>>>>>>> .merge_file_ZueMxh
 		}
 		$refererDomain = BcUtil::getDomain($_SERVER['HTTP_REFERER']);
 		if (!preg_match('/^' . preg_quote($siteDomain, '/') . '/', $refererDomain)) {
@@ -1619,4 +1680,23 @@ class BcAppController extends Controller {
 		}
 		return true;
 	}
+<<<<<<< .merge_file_2ncL8K
+=======
+
+/**
+ * リファラチェックを行う
+ *
+ * @return bool
+ */
+	protected function _checkReferer() {
+		if($this->request->is('ssl')) {
+			$siteUrl = Configure::read('BcEnv.sslUrl');
+		} else {
+			$siteUrl = Configure::read('BcEnv.siteUrl');
+		}
+		if (!preg_match('/^' . preg_quote($siteUrl, '/') . '/', $_SERVER['HTTP_REFERER'])) {
+			throw new NotFoundException();
+		}
+	}
+>>>>>>> .merge_file_ZueMxh
 }

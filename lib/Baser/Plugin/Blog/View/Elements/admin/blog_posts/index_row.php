@@ -30,8 +30,17 @@
 		<?php $this->BcBaser->link($this->BcBaser->getImg('admin/icn_tool_delete.png', array('alt' => '削除', 'class' => 'btn')), array('action' => 'ajax_delete', $data['BlogContent']['id'], $data['BlogPost']['id']), array('title' => '削除', 'class' => 'btn-delete')) ?>
 	</td>
 	<td><?php echo $data['BlogPost']['no']; ?></td>
+<<<<<<< .merge_file_p7GYVD
 	<td style="white-space:nowrap"><?php echo $this->BcTime->format('Y-m-d', $data['BlogPost']['posts_date']); ?></td>
 	<td class="eye_catch"><?php echo $this->BcUpload->uploadImage('BlogPost.eye_catch',  $data['BlogPost']['eye_catch'], array('imgsize' => 'mobile_thumb')) ?></td>
+=======
+	<td><?php echo $this->BcTime->format('Y-m-d', $data['BlogPost']['posts_date']); ?></td>
+<?php if (Hash::get($data, 'BlogPost.eye_catch')): ?>
+	<td class="eye_catch"><?php echo $this->BcUpload->uploadImage('BlogPost.eye_catch',  $data['BlogPost']['eye_catch'], array('imgsize' => 'mobile_thumb')) ?></td>
+<?php else: ?>
+	<td class="eye_catch"></td>
+<?php endif ?>
+>>>>>>> .merge_file_6elvll
 	<td>
 		<?php if (!empty($data['BlogCategory']['title'])): ?>
 			<?php echo $data['BlogCategory']['title']; ?>
