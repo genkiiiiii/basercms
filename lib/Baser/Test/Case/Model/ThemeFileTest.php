@@ -45,6 +45,9 @@ class ThemeFileTest extends BaserTestCase {
 		$this->ThemeFile->create([
 			'ThemeFile' => [
 				'name' => '',
+				'parent' => '',
+				'ext' => 'php',
+				'contents' => ''
 			]
 		]);
 		$this->assertFalse($this->ThemeFile->validates());
@@ -56,7 +59,9 @@ class ThemeFileTest extends BaserTestCase {
 		$this->ThemeFile->create([
 			'ThemeFile' => [
 				'name' => 'baser',
-				'parent' => 'hoge'
+				'parent' => 'hoge',
+				'ext' => 'php',
+				'contents' => ''
 			]
 		]);
 		$this->assertTrue($this->ThemeFile->validates());
@@ -65,12 +70,22 @@ class ThemeFileTest extends BaserTestCase {
 	public function test重複チェック異常系() {
 		$this->ThemeFile->create([
 			'ThemeFile' => [
-				'name' => 'config.php',
+				'name' => 'config',
 				'parent' => WWW_ROOT . 'theme/nada-icons/',
+				'ext' => 'php',
+				'contents' => ''
 			]
 		]);
 		$this->assertFalse($this->ThemeFile->validates());
 		$this->assertArrayHasKey('name', $this->ThemeFile->validationErrors);
 		$this->assertEquals('入力されたテーマファイル名は、同一階層に既に存在します。', current($this->ThemeFile->validationErrors['name']));
 	}
+
+/**
+ * ファイルの重複チェック
+ */
+	public function testDuplicateThemeFile() {
+		$this->markTestIncomplete('このテストは、まだ実装されていません。');
+	}
+
 }
