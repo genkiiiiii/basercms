@@ -10,8 +10,9 @@
  * @license			http://basercms.net/license/index.html
  */
 
-App::uses('View', 'View');
+App::uses('BcAppView', 'View');
 App::uses('BcAppHelper', 'View/Helper');
+App::uses('PagesController', 'Controller');
 App::uses('BcHtmlHelper', 'View/Helper');
 
 /**
@@ -20,28 +21,63 @@ App::uses('BcHtmlHelper', 'View/Helper');
  * @package Baser.View.Helper
  * @property BcAppHelper $BcAppHelper
  * @property BcHtmlHelper $BcHtmlHelper
- * @property View $View
+ * @property BcAppView $View
  */
 class BcAppHelperTest extends BaserTestCase {
+
+/**
+ * Fixtures
+ * @var array
+ */
+	public $fixtures = [
+		'baser.View.Helper.BcBaserHelper.SiteConfigBcBaserHelper',
+		'baser.Default.User',
+		'baser.Default.Site',
+		'baser.Default.Content',
+	];
+
 	public function setUp() {
 		parent::setUp();
-		$View = new View();
-		$this->BcHtmlHelper = new BcHtmlHelper($View);
+		$this->View = new BcAppView(new PagesController($this->_getRequest('/')));
+		$this->BcHtmlHelper = new BcHtmlHelper($this->View);
 	}
 
 	public function tearDown() {
 		parent::tearDown();
 	}
 
-	/**
-	 * コンストラクタ
-	 */
+/**
+ * コンストラクタ
+ */
 	public function test__construct() {
 		$this->assertEquals('<input type="checkbox" name="%s[]"%s />&nbsp;', $this->BcHtmlHelper->_tags['checkboxmultiple'], "コンストラクタの結果が違います。");
 	}
 
+/**
+ * 出力時にインデント用のタブを除去
+ *
+ * 改行+タブの文字列がrenderのafterLayoutが呼ばれた後、改行のみに変換されていることを確認するテスト
+ */
 	public function testAfterLayout() {
-		$this->markTestIncomplete('このテストは、まだ実装されていません。');
+		//error時にファイルが残留しないようにするためtryを使用
+		try {
+			$input = "poge\n\t\thoge";
+			$expects = "poge\nhoge";
+
+			$fileName = 'company';
+			$path = APP . 'View/Pages/' . $fileName . '.php';
+			$fh = fopen($path, 'w');
+			fwrite($fh, $input);
+			fclose($fh);
+			$this->View->set('pagePath', $fileName);
+			$output = $this->View->render('templates/default');
+			unlink($path);
+			$this->assertRegExp('/' . $expects . '/s', $output);
+		}catch (Exception $e) {
+			echo 'error: ',  $e->getMessage(), "\n";
+			//テストを失敗させないとテストが成功して通るため失敗assertion実行
+			$this->assertTrue(False, "BcAppHelperTest:testAfterLayoutでエラーがでました。");
+		}
 	}
 
 	public function testDispatchEvent() {

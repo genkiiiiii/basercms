@@ -115,52 +115,43 @@ class BlogPost extends BlogAppModel {
 	]];
 
 /**
- * validate
+ * BlogPost constructor.
  *
- * @var array
+ * @param bool $id
+ * @param null $table
+ * @param null $ds
  */
-	public $validate = [
-		'name' => [
-			['rule' => ['notBlank'],
-				'message' => 'タイトルを入力してください。',
-				'required' => true],
-			['rule' => ['maxLength', 255],
-				'message' => 'タイトルは255文字以内で入力してください。']
-		],
-		'detail' => [
-			['rule' => ['maxByte', 64000],
-			'message' => '本稿欄に保存できるデータ量を超えています。']
-		],
-		'detail_draft' => [
-			['rule' => ['maxByte', 64000],
-			'message' => '草稿欄に保存できるデータ量を超えています。']
-		],
-		'publish_begin' => [
-			['rule' => ['checkDate'],
-				'message' => '公開開始日の形式が不正です。'],
-			['rule' => ['checkDateRenge', 'publish_begin', 'publish_end'],
-				'message' => '公開期間が不正です。']
-			
-		],
-		'publish_end' => [
-			['rule' => ['checkDate'],
-				'message' => '公開終了日の形式が不正です。'],
-			['rule' => ['checkDateRenge', 'publish_begin', 'publish_end'],
-				'message' => '公開期間が不正です。']
-		],
-		'posts_date' => [
-			['rule' => ['notBlank'],
-				'message' => '投稿日を入力してください。',
-				'required' => true],
-			['rule' => ['checkDate'],
-				'message' => '投稿日の形式が不正です。']
-		],
-		'user_id' => [
-			['rule' => ['notBlank'],
-				'message' => '投稿者を選択してください。']
-		]
-	];
-
+	public function __construct($id = false, $table = null, $ds = null) {
+		parent::__construct($id, $table, $ds);
+		$this->validate = [
+			'name' => [
+				['rule' => ['notBlank'], 'message' => __d('baser', 'タイトルを入力してください。'), 'required' => true],
+				['rule' => ['maxLength', 255], 'message' => __d('baser', 'タイトルは255文字以内で入力してください。')]],
+			'content' => [
+				['rule' => 'containsScript', 'message' => __d('baser', '概要欄でスクリプトの入力は許可されていません。')]],
+			'detail' => [
+				['rule' => ['maxByte', 64000], 'message' => __d('baser', '本稿欄に保存できるデータ量を超えています。')],
+				['rule' => 'containsScript', 'message' => __d('baser', '本稿欄でスクリプトの入力は許可されていません。')]],
+			'detail_draft' => [
+				['rule' => ['maxByte', 64000], 'message' => __d('baser', '草稿欄に保存できるデータ量を超えています。')],
+				['rule' => 'containsScript', 'message' => __d('baser', '草稿欄でスクリプトの入力は許可されていません。')]],
+			'publish_begin' => [
+				['rule' => ['checkDate'], 'allowEmpty' => true, 'message' => __d('baser', '公開開始日の形式が不正です。')],
+				['rule' => ['checkDateRenge', 'allowEmpty' => true, 'publish_begin', 'publish_end'], 'message' => __d('baser', '公開期間が不正です。')]],
+			'publish_end' => [
+				['rule' => ['checkDate'], 'allowEmpty' => true, 'message' => __d('baser', '公開終了日の形式が不正です。')],
+				['rule' => ['checkDateRenge', 'allowEmpty' => true, 'publish_begin', 'publish_end'], 'message' => __d('baser', '公開期間が不正です。')]],
+			'posts_date' => [
+				['rule' => ['notBlank'], 'allowEmpty' => true, 'message' => __d('baser', '投稿日を入力してください。'), 'required' => true],
+				['rule' => ['checkDate'], 'message' => __d('baser', '投稿日の形式が不正です。')]],
+			'user_id' => [
+				['rule' => ['notBlank'], 'message' => __d('baser', '投稿者を選択してください。')]],
+			'eye_catch' => [
+				['rule' => ['fileExt', ['gif', 'jpg', 'jpeg', 'jpe', 'jfif', 'png']], 'allowEmpty' => true, 'message' => __d('baser', '許可されていないファイルです。')]
+			]
+		];
+	}
+	
 /**
  * アップロードビヘイビアの設定
  *
@@ -577,7 +568,7 @@ class BlogPost extends BlogAppModel {
 			return [];
 		}
 		$_data = [];
-		$_data['SearchIndex']['type'] = 'ブログ';
+		$_data['SearchIndex']['type'] = __d('baser', 'ブログ');
 		$_data['SearchIndex']['model_id'] = $this->id;
 		$_data['SearchIndex']['content_filter_id'] = '';
 		if (!empty($data['blog_category_id'])) {
@@ -587,7 +578,7 @@ class BlogPost extends BlogAppModel {
 		$_data['SearchIndex']['site_id'] = $content['Content']['site_id'];
 		$_data['SearchIndex']['title'] = $data['name'];
 		$_data['SearchIndex']['detail'] = $data['content'] . ' ' . $data['detail'];
-		$_data['SearchIndex']['url'] = $content['Content']['url'] . '/archives/' . $data['no'];
+		$_data['SearchIndex']['url'] = $content['Content']['url'] . 'archives/' . $data['no'];
 		$_data['SearchIndex']['status'] = $this->allowPublish($data);
 		$_data['SearchIndex']['content_filter_id'] = $data['blog_category_id'];
 		return $_data;
@@ -651,24 +642,20 @@ class BlogPost extends BlogAppModel {
 		$result = $this->save();
 
 		if ($result) {
-			$data['BlogPost']['id'] = $this->getLastInsertID();
-
 			if ($eyeCatch) {
-				$data['BlogPost']['eye_catch'] = $eyeCatch;
-				$this->set($data);
-				$data = $this->renameToBasenameFields(true);
-				$this->set($data);	// 内部でリネームされたデータが再セットされる
+				$result['BlogPost']['eye_catch'] = $eyeCatch;
+				$this->set($result);
+				$result = $this->renameToBasenameFields(true);
+				$this->set($result);	// 内部でリネームされたデータが再セットされる
 				$result = $this->save();
 			}
-
 			// EVENT BlogPost.afterCopy
-			$event = $this->dispatchEvent('afterCopy', [
-				'id' => $data['BlogPost']['id'],
-				'data' => $data,
+			$this->dispatchEvent('afterCopy', [
+				'id' => $result['BlogPost']['id'],
+				'data' => $result,
 				'oldId' => $id,
 				'oldData' => $oldData,
 			]);
-
 			return $result;
 		} else {
 			if (isset($this->validationErrors['name'])) {
@@ -869,7 +856,7 @@ class BlogPost extends BlogAppModel {
 			// NO
 			if ($query['id'] || $query['no']) {
 				if(!$query['contentId'] && !$query['contentUrl'] && !$query['force']) {
-					trigger_error('contentId を指定してください。', E_USER_WARNING);
+					trigger_error(__d('baser', 'contentId を指定してください。'), E_USER_WARNING);
 				}
 				if($query['no'] && !$query['id']) {
 					$query['id'] = $query['no'];
@@ -908,7 +895,7 @@ class BlogPost extends BlogAppModel {
 				$query['preview'], $query['sort'], $query['direction'], $query['num'], 
 				$query['force'],$query['no'], $query['siteId'], $query['contentUrl']);
 
-			$this->expects($expects, false);
+			$this->reduceAssociations($expects, false);
 			
 			$this->BlogContent->unbindModel([
 				'hasMany' => ['BlogPost', 'BlogCategory']
@@ -940,7 +927,7 @@ class BlogPost extends BlogAppModel {
 		} elseif($contentUrl) {
 			$categoryConditions['BlogCategory.blog_content_id'] = $this->BlogContent->Content->field('entity_id', ['Content.url' => $contentUrl]);
 		} elseif(!$force) {
-			trigger_error('contentId を指定してください。', E_USER_WARNING);
+			trigger_error(__d('baser', 'contentId を指定してください。'), E_USER_WARNING);
 		}
 		$categoryId = $this->BlogCategory->field('id', $categoryConditions);
 		if ($categoryId === false) {

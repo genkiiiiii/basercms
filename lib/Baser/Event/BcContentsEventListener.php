@@ -18,7 +18,7 @@
  *
  * @package Baser.Event
  */
-class BcContentsEventListener extends Object implements CakeEventListener {
+class BcContentsEventListener extends CakeObject implements CakeEventListener {
 
 /**
  * Implemented Events
@@ -68,8 +68,8 @@ class BcContentsEventListener extends Object implements CakeEventListener {
 /**
  * Form After Submit
  *
- * フォームの保存ボタンの前後に、一覧、プレビュー、削除ボタンを配置する
- * プレビューを配置する場合は、設定にて、preview を true にする
+ * フォームの保存ボタンの前後に、一覧、プレビュー、削除ボタン、その他のエレメントを配置する
+ * プレビューを配置する場合は、コンテンツの設定にて、preview を true にする
  *
  * @param CakeEvent $event
  * @return string
@@ -78,27 +78,30 @@ class BcContentsEventListener extends Object implements CakeEventListener {
 		if(!BcUtil::isAdminSystem()) {
 			return $event->data['out'];
 		}
+		/* @var BcAppView $View */
 		$View = $event->subject();
 		$data = $View->request->data;
 		if(!preg_match('/(AdminEditForm|AdminEditAliasForm)$/', $event->data['id'])) {
 			return $event->data['out'];
 		}
-		$output = $View->BcHtml->link('一覧に戻る', ['plugin' => '', 'admin' => true, 'controller' => 'contents', 'action' => 'index'], ['class' => 'button']);
 		$setting = Configure::read('BcContents.items.' . $data['Content']['plugin'] . '.' . $data['Content']['type']);
-		if (!empty($setting['preview']) && $data['Content']['type'] != 'ContentFolder') {
-			$output .= "\n" . $View->BcForm->button('プレビュー', ['class' => 'button', 'id' => 'BtnPreview']);
-		}
-		$output .= $event->data['out'];
-		if(empty($data['Content']['site_root'])) {
-			if($data['Content']['alias_id']) {
-				$deleteText = '削除';
-			} else {
-				$deleteText = 'ゴミ箱へ移動';
-			}
-			$output .= $View->BcForm->button($deleteText, ['class' => 'button', 'id' => 'BtnDelete']);
-		}
-		$event->data['out'] = $output;
-		return $output;
+
+		$PermissionModel = ClassRegistry::init('Permission');
+		$isAvailablePreview = (!empty($setting['preview']) && $data['Content']['type'] != 'ContentFolder');
+		$isAvailableDelete = (empty($data['Content']['site_root']) && $PermissionModel->check('/' . Configure::read('Routing.prefixes.0') . '/contents/delete', $View->viewVars['user']['user_group_id']));
+
+		$event->data['out'] = implode("\n", [
+			$View->element('admin/content_options'),
+			$View->element('admin/content_actions', [
+				'isAvailablePreview' => $isAvailablePreview,
+				'isAvailableDelete' => $isAvailableDelete,
+				'currentAction' => $event->data['out'],
+				'isAlias' => ($data['Content']['alias_id'])
+			]),
+        	$View->element('admin/content_related'),
+        	$View->element('admin/content_info')
+		]);
+		return $event->data['out'];
 	}
 
 }

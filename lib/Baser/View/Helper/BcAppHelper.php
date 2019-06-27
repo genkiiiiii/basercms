@@ -25,7 +25,7 @@ class BcAppHelper extends Helper {
  * @return	void
  * @access	public
  */
-	public function __construct(View $View, $settings = array()) {
+	public function __construct(View $View, $settings = []) {
 
 		parent::__construct($View, $settings);
 
@@ -132,7 +132,7 @@ class BcAppHelper extends Helper {
 					if (property_exists($this->_View, 'adminTheme') && $this->_View->adminTheme) {
 						if (file_exists($themePath = Configure::read('App.www_root') . 'theme' . DS . $this->_View->adminTheme . DS . $file)) {
 							$adminTheme = $this->_View->adminTheme . '/';
-							if ($baseUrl) {
+							if (!empty($baseUrl)) {
 								// スマートURLオフ
 								$webPath = Configure::read('App.baseUrl') . "/theme/" . $adminTheme . $asset[0];
 							} else {
@@ -189,7 +189,7 @@ class BcAppHelper extends Helper {
 		}
 
 		if (is_array($url) && !isset($url['admin']) && !empty($this->request->params['admin'])) {
-			$url = array_merge($url, array('admin' => true));
+			$url = array_merge($url, ['admin' => true]);
 		}
 
 		if (!is_array($url) && preg_match('/^(javascript|https?|ftp|tel):/', $url)) {
@@ -214,14 +214,14 @@ class BcAppHelper extends Helper {
  * @param array $params
  * @return mixed
  */
-	public function dispatchEvent($name, $params = array(), $options = array()) {
+	public function dispatchEvent($name, $params = [], $options = []) {
 
-		$options = array_merge(array(
+		$options = array_merge([
 			'modParams' => 0,
 			'plugin' => $this->plugin,
 			'layer' => 'Helper',
 			'class' => str_replace('Helper', '', get_class($this))
-			), $options);
+			], $options);
 
 		App::uses('BcEventDispatcher', 'Event');
 		return BcEventDispatcher::dispatch($name, $this->_View, $params, $options);

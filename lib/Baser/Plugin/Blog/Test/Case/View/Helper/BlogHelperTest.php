@@ -101,7 +101,7 @@ class BlogHelperTest extends BaserTestCase {
 		$this->Blog = new BlogHelper($this->View);
 
 		$this->BlogContent = ClassRegistry::init('Blog.BlogContent');
-		$this->BlogContent->expects([]);
+		$this->BlogContent->reduceAssociations([]);
 		$this->Blog->setContent(1);
 	}
 
@@ -158,12 +158,12 @@ class BlogHelperTest extends BaserTestCase {
 	}
 
 /**
- * ブログアカウント名を取得する
+ * ブログのコンテンツ名を取得する
  */
 	public function testGetBlogName() {
 		$result = $this->Blog->getBlogName();
 		$expects = 'news';
-		$this->assertEquals($expects, $result, 'ブログアカウント名を正しく取得できません');
+		$this->assertEquals($expects, $result, 'ブログのコンテンツ名を正しく取得できません');
 	}
 
 /**
@@ -187,21 +187,31 @@ class BlogHelperTest extends BaserTestCase {
 
 /**
  * 記事タイトルを取得する
+ * @param string $name タイトル
+ * @param bool $link リンクをつけるかどうか
+ * @param array $options オプション
+ * @param string $expected 期待値
+ * @dataProvider getPostTitleDataProvider
  */
-	public function testGetPostTitle() {
+	public function testGetPostTitle($name, $link, $options, $expected) {
 		$post = ['BlogPost' => [
 			'blog_content_id' => 1,
-			'name' => 'test-name',
+			'name' => $name,
 			'no' => 4,
 		]];
+		$result = $this->Blog->getPostTitle($post, $link, $options);
+		$this->assertEquals($expected, $result, '記事タイトルを正しく取得できません');
+	}
 
-		// $link = true
-		$result = $this->Blog->getPostTitle($post);
-		$this->assertEquals('<a href="/news/archives/4">test-name</a>', $result, '記事タイトルを正しく取得できません');
-
-		// $link = false
-		$result  = $this->Blog->getPostTitle($post, false);
-		$this->assertEquals('test-name', $result, '記事タイトルを正しく取得できません');
+	public function getPostTitleDataProvider() {
+		return [
+			['test-name', true, [], '<a href="/news/archives/4">test-name</a>'],
+			['test-name', false, [], 'test-name'],
+			['<script></script>', false, [], '&lt;script&gt;&lt;/script&gt;'],
+			['<script></script>', true, [], '<a href="/news/archives/4">&lt;script&gt;&lt;/script&gt;</a>'],
+			['test-name<br>2行目', false, ['escape' => false], 'test-name<br>2行目'],
+			['test-name<br>2行目', true, ['escape' => false], '<a href="/news/archives/4">test-name<br>2行目</a>'],
+		];
 	}
 
 /**
@@ -265,7 +275,8 @@ class BlogHelperTest extends BaserTestCase {
 		$post = ['BlogPost' => [
 			'content' => 'test-content',
 			'detail' => 'test-detail',
-			'no' => 3
+			'no' => 3,
+			'blog_content_id' => 1
 		]];
 		$result = $this->Blog->getPostContent($post, $moreText, $moreLink, $cut);
 		$this->assertEquals($result, $expected, '記事の本文を正しく取得できません');
@@ -681,10 +692,11 @@ class BlogHelperTest extends BaserTestCase {
  * 子カテゴリを持っているかどうか
  *
  * BlogCategory::hasChild() のラッピングの為、テストはスルー 
- */
+ *
 	public function testHasChildCategory() {
 		$this->markTestIncomplete('このメソッドは、BlogCategory::hasChild() をラッピングしているメソッドの為スキップします。');
 	}
+ */
 
 /**
  * タグリストを取得する
@@ -807,10 +819,11 @@ class BlogHelperTest extends BaserTestCase {
 
 /**
  * タグ記事一覧へのリンクタグを出力する
- */
+ *
 	public function testTagLink() {
 		$this->markTestIncomplete('このメソッドは、BlogHelper::getTagLink() をラッピングしているメソッドの為スキップします。');
 	}
+ */
 
 /**
  * ブログ記事一覧出力

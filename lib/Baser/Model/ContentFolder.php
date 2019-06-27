@@ -32,22 +32,18 @@ class ContentFolder extends AppModel implements CakeEventListener {
 	public $beforeUrl = null;
 
 /**
+ * 変更前ステータス
+ * 
+ * @var bool|null
+ */
+	private $beforeStatus = null;
+	
+/**
  * テンプレートを移動可能かどうか
  * 
  * @var bool
  */
 	public $isMovableTemplate = true;
-
-/**
- * バリデーション
- *
- * @var array
- */
-	public $validate = [
-		'id' => [
-			['rule' => 'numeric', 'on' => 'update', 'message' => 'IDに不正な値が利用されています。']
-		]
-	];
 
 /**
  * Implemented Events
@@ -62,13 +58,28 @@ class ContentFolder extends AppModel implements CakeEventListener {
 	}
 
 /**
+ * ContentFolder constructor.
+ *
+ * @param bool $id
+ * @param null $table
+ * @param null $ds
+ */
+	public function __construct($id = false, $table = null, $ds = null) {
+		parent::__construct($id, $table, $ds);
+		$this->validate = [
+			'id' => [
+				['rule' => 'numeric', 'on' => 'update', 'message' => __d('baser', 'IDに不正な値が利用されています。')]
+		]];
+	}
+
+/**
  * Before Move
  * 
  * @param \CakeEvent $event
  */
 	public function beforeMove(CakeEvent $event) {
 		if($event->data['data']['currentType'] == 'ContentFolder') {
-			$this->setBeforeUrl($event->data['data']['entityId']);
+			$this->setBeforeRecord($event->data['data']['entityId']);
 		}
 	}
 
@@ -90,9 +101,9 @@ class ContentFolder extends AppModel implements CakeEventListener {
  */
 	public function beforeSave($options = []) {
 		// 変更前のURLを取得
-		if(!empty($this->data['ContentFolder']['id']) && $this->isMovableTemplate) {
+		if(!empty($this->data['ContentFolder']['id']) && ($this->isMovableTemplate || !empty($options['reconstructSearchIndices']))) {
 			$this->isMovableTemplate = false;
-			$this->setBeforeUrl($this->data['ContentFolder']['id']);
+			$this->setBeforeRecord($this->data['ContentFolder']['id']);
 		}
 		return parent::beforeSave($options);
 	}
@@ -110,6 +121,10 @@ class ContentFolder extends AppModel implements CakeEventListener {
 			$this->movePageTemplates($this->data['Content']['url']);
 			$this->isMovableTemplate = true;
 		}
+		if(!empty($options['reconstructSearchIndices']) && $this->beforeStatus !== $this->data['Content']['status']) {
+			$searchIndexModel = ClassRegistry::init('SearchIndex');
+			$searchIndexModel->reconstruct($this->data['Content']['id']);
+		}
 		return true;
 	}
 
@@ -118,10 +133,11 @@ class ContentFolder extends AppModel implements CakeEventListener {
  *
  * @param int $id
  */
-	public function setBeforeUrl($id) {
-		$record = $this->find('first', ['fields' => ['Content.url'], 'conditions' => ['ContentFolder.id' => $id], 'recursive' => 0]);
+	private function setBeforeRecord($id) {
+		$record = $this->find('first', ['fields' => ['Content.url', 'Content.status'], 'conditions' => ['ContentFolder.id' => $id], 'recursive' => 0]);
 		if($record['Content']['url']) {
 			$this->beforeUrl = $record['Content']['url'];
+			$this->beforeStatus = $record['Content']['status'];
 		}
 	}
 	
@@ -206,7 +222,7 @@ class ContentFolder extends AppModel implements CakeEventListener {
 			if($searchKey !== false) {
 				unset($folderTemplates[$searchKey]);
 			}
-			$folderTemplates = ['' => '親フォルダの設定に従う（' . $parentTemplate . '）'] + $folderTemplates;
+			$folderTemplates = ['' => sprintf(__d('baser', '親フォルダの設定に従う（%s）'), $parentTemplate)] + $folderTemplates;
 		}
 		return $folderTemplates;
 	}

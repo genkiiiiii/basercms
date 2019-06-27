@@ -57,7 +57,7 @@ class MailMessagesController extends MailAppController {
  *
  * @var array
  */
-	public $subMenuElements = array('mail_fields');
+	public $subMenuElements = ['mail_fields'];
 
 /**
  * beforeFilter
@@ -66,14 +66,13 @@ class MailMessagesController extends MailAppController {
  */
 	public function beforeFilter() {
 		parent::beforeFilter();
-		$this->MailContent->recursive = -1;
 		$this->mailContent = $this->MailContent->read(null, $this->params['pass'][0]);
 		App::uses('MailMessage', 'Mail.Model');
 		$this->MailMessage = new MailMessage();
 		$this->MailMessage->setup($this->mailContent['MailContent']['id']);
 		$mailContentId = $this->params['pass'][0];
 		$this->request->params['Content'] = $this->BcContents->getContent($mailContentId)['Content'];
-		$this->crumbs[] = array('name' => $this->request->params['Content']['title'] . '管理', 'url' => array('plugin' => 'mail', 'controller' => 'mail_fields', 'action' => 'index', $this->params['pass'][0]));
+		$this->crumbs[] = array('name' => sprintf(__d('baser', '%s 管理'), $this->request->params['Content']['title']), 'url' => array('plugin' => 'mail', 'controller' => 'mail_fields', 'action' => 'index', $this->params['pass'][0]));
 	}
 
 /**
@@ -101,19 +100,16 @@ class MailMessagesController extends MailAppController {
 			'limit' => $this->passedArgs['num']
 		);
 		$messages = $this->paginate('MailMessage');
-		$mailFields = $this->MailField->find('all', array(
-			'conditions' => array('MailField.mail_content_id' => $mailContentId),
-			'order' => 'MailField.sort'
-		));
-		$this->set(compact('mailFields'));
-		$this->set(compact('messages'));
+		$mailFields = $this->MailMessage->mailFields;
+
+		$this->set(compact('messages', 'mailFields'));
 
 		if ($this->RequestHandler->isAjax() || !empty($this->request->query['ajax'])) {
 			$this->render('ajax_index');
 			return;
 		}
 
-		$this->pageTitle = '受信メール一覧';
+		$this->pageTitle = sprintf(__d('baser', '%s｜受信メール一覧'), $this->request->params['Content']['title']);
 		$this->help = 'mail_messages_index';
 	}
 
@@ -126,21 +122,18 @@ class MailMessagesController extends MailAppController {
  */
 	public function admin_view($mailContentId, $messageId) {
 		if (!$mailContentId || !$messageId) {
-			$this->setMessage('無効な処理です。', true);
+			$this->setMessage(__d('baser', '無効な処理です。'), true);
 			$this->notFound();
 		}
 		$message = $this->MailMessage->find('first', array(
 			'conditions' => array('MailMessage.id' => $messageId),
 			'order' => 'created DESC'
 		));
-		$mailFields = $this->MailField->find('all', array(
-			'conditions' => array('MailField.mail_content_id' => $mailContentId),
-			'order' => 'MailField.sort'
-		));
-		$this->crumbs[] = array('name' => '受信メール一覧', 'url' => array('controller' => 'mail_messages', 'action' => 'index', $this->params['pass'][0]));
-		$this->set(compact('mailFields'));
-		$this->set(compact('message'));
-		$this->pageTitle = '受信メール詳細';
+		$mailFields = $this->MailMessage->mailFields;
+
+		$this->crumbs[] = array('name' => __d('baser', '受信メール一覧'), 'url' => array('controller' => 'mail_messages', 'action' => 'index', $this->params['pass'][0]));
+		$this->set(compact('message', 'mailFields'));
+		$this->pageTitle = sprintf(__d('baser', '%s｜受信メール詳細'), $this->request->params['Content']['title']);
 	}
 
 /**
@@ -169,7 +162,7 @@ class MailMessagesController extends MailAppController {
 	public function admin_ajax_delete($mailContentId, $messageId) {
 		$this->_checkSubmitToken();
 		if (!$messageId) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		if ($this->_del($messageId)) {
 			exit(true);
@@ -187,7 +180,7 @@ class MailMessagesController extends MailAppController {
  */
 	protected function _del($id = null) {
 		if ($this->MailMessage->delete($id)) {
-			$message = '受信データ NO「' . $id . '」 を削除しました。';
+			$message = sprintf(__d('baser', '受信データ NO「%s」 を削除しました。'), $id);
 			$this->MailMessage->saveDbLog($message);
 			return true;
 		} else {
@@ -205,13 +198,13 @@ class MailMessagesController extends MailAppController {
 	public function admin_delete($mailContentId, $messageId) {
 		$this->_checkSubmitToken();
 		if (!$mailContentId || !$messageId) {
-			$this->setMessage('無効な処理です。', true);
+			$this->setMessage(__d('baser', '無効な処理です。'), true);
 			$this->notFound();
 		}
 		if ($this->MailMessage->delete($messageId)) {
-			$this->setMessage($this->mailContent['MailContent']['title'] . 'への受信データ NO「' . $messageId . '」 を削除しました。', false, true);
+			$this->setMessage(sprintf(__d('baser', '%s への受信データ NO「%s」 を削除しました。'), $this->mailContent['Content']['title'], $messageId), false, true);
 		} else {
-			$this->setMessage('データベース処理中にエラーが発生しました。', true);
+			$this->setMessage(__d('baser', 'データベース処理中にエラーが発生しました。'), true);
 		}
 		$this->redirect(array('action' => 'index', $mailContentId));
 	}

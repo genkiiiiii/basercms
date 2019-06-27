@@ -77,14 +77,16 @@ class FavoritesController extends AppController {
  * @return void
  */
 	public function admin_ajax_edit($id) {
+		$this->autoRender = false;
 		if (!$id) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		if ($this->request->data) {
 			$this->Favorite->set($this->request->data);
 			$data = $this->Favorite->save();
 			if ($data) {
+				$this->autoLayout = false;
 				$this->set('favorite', $data);
 				$this->render('ajax_form');
 				return;
@@ -92,8 +94,7 @@ class FavoritesController extends AppController {
 				$this->ajaxError(500, $this->Favorite->validationErrors);
 			}
 		}
-
-		exit();
+		return;
 	}
 
 /**
@@ -105,11 +106,11 @@ class FavoritesController extends AppController {
 		if ($this->request->data) {
 			$name = $this->Favorite->field('name', ['Favorite.id' => $this->request->data['Favorite']['id']]);
 			if ($this->Favorite->delete($this->request->data['Favorite']['id'])) {
-				$this->Favorite->saveDbLog('よく使う項目: ' . $name . ' を削除しました。');
+				$this->Favorite->saveDbLog(sprintf(__d('baser', 'よく使う項目: %s を削除しました。'), $name));
 				exit(true);
 			}
 		} else {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		exit();
 	}
@@ -127,7 +128,7 @@ class FavoritesController extends AppController {
 				exit(true);
 			}
 		}
-		$this->ajaxError(400, '無効な処理です。');
+		$this->ajaxError(400, __d('baser', '無効な処理です。'));
 		exit();
 	}
 

@@ -18,6 +18,7 @@ App::uses('HttpSocket', 'Core.Network/Http');
  * @package	Baser.Controller
  * @property Content $Content
  * @property Site $Site
+ * @property SearchIndex $SearchIndex
  */
 class SearchIndicesController extends AppController {
 
@@ -69,8 +70,8 @@ class SearchIndicesController extends AppController {
 
 		if (!empty($this->request->params['admin'])) {
 			$this->crumbs = [
-				['name' => 'システム設定', 'url' => ['controller' => 'site_configs', 'action' => 'form']],
-				['name' => '検索インデックス管理', 'url' => ['controller' => 'search_indices', 'action' => 'index']]
+				['name' => __d('baser', 'システム設定'), 'url' => ['controller' => 'site_configs', 'action' => 'form']],
+				['name' => __d('baser', '検索インデックス管理'), 'url' => ['controller' => 'search_indices', 'action' => 'index']]
 			];
 		}
 		
@@ -87,6 +88,9 @@ class SearchIndicesController extends AppController {
 				}
 			}
 			$content = $Content->find('first', ['conditions' => ['Content.url' => $url], 'recursive' => 0]);
+			if (is_null($content['Site']['id'])) {
+				$content['Site'] = $this->Site->getRootMain()['Site'];
+			}
 			$this->request->params['Content'] = $content['Content'];
 			$this->request->params['Site'] = $content['Site'];
 		}
@@ -122,7 +126,7 @@ class SearchIndicesController extends AppController {
 		}
 		$this->set('query', $query);
 		$this->set('datas', $datas);
-		$this->pageTitle = '検索結果一覧';
+		$this->pageTitle = __d('baser', '検索結果一覧');
 	}
 
 /**
@@ -179,8 +183,8 @@ class SearchIndicesController extends AppController {
 		}
 		if (!empty($data['SearchIndex']['f'])) {
 			$content = $this->Content->find('first', ['fields' => ['lft', 'rght'], 'conditions' => ['Content.id' => $data['SearchIndex']['f']], 'recursive' => -1]);
-			$conditions['SearchIndex.rght <'] = $data['SearchIndex']['rght'];
-			$conditions['SearchIndex.lft >'] = $data['SearchIndex']['lft'];
+			$conditions['SearchIndex.rght <='] = $content['Content']['rght'];
+			$conditions['SearchIndex.lft >='] = $content['Content']['lft'];
 		}
 		if ($query) {
 			$query = $this->_parseQuery($query);
@@ -199,7 +203,7 @@ class SearchIndicesController extends AppController {
  * @return void
  */
 	public function admin_index() {
-		$this->pageTitle = '検索インデックス一覧';
+		$this->pageTitle = __d('baser', '検索インデックス一覧');
 
 		/* 画面情報設定 */
 		$default = [
@@ -322,12 +326,12 @@ class SearchIndicesController extends AppController {
 	public function admin_ajax_delete($id = null) {
 		$this->_checkSubmitToken();
 		if (!$id) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		/* 削除処理 */
 		if ($this->SearchIndex->delete($id)) {
-			$message = '検索インデックスより NO.' . $id . ' を削除しました。';
+			$message = sprintf(__d('baser', '検索インデックスより NO.%s を削除しました。'), $id);
 			$this->SearchIndex->saveDbLog($message);
 			exit(true);
 		}
@@ -348,7 +352,7 @@ class SearchIndicesController extends AppController {
 
 				/* 削除処理 */
 				if ($this->SearchIndex->delete($id)) {
-					$message = '検索インデックスより NO.' . $id . ' を削除しました。';
+					$message = sprintf(__d('baser', '検索インデックスより NO.%s を削除しました。'), $id);
 					$this->SearchIndex->saveDbLog($message);
 				}
 			}
@@ -452,45 +456,10 @@ class SearchIndicesController extends AppController {
  */
 	public function admin_reconstruct() {
 		set_time_limit(0);
-		$contents = $this->Content->find('all', [
-			'conditions' => [
-				'OR' => [
-					['Site.status' => null],
-					['Site.status' => true],
-		]], 'order' => 'lft', 'recursive' => 2]);
-		$models = [];
-		$db = $this->SearchIndex->getDataSource();
-		$this->SearchIndex->begin();
-		$db->truncate('search_indices');
-		$result = true;
-		if($contents) {
-			foreach($contents as $content) {
-				if(isset($models[$content['Content']['type']])) {
-					$Model = $models[$content['Content']['type']];
-				} else {
-					if(ClassRegistry::isKeySet($content['Content']['type'])) {
-						$models[$content['Content']['type']] = $Model = ClassRegistry::getObject($content['Content']['type']);
-					} else {
-						if($content['Content']['plugin'] == 'Core') {
-							$modelName = $content['Content']['type'];
-						} else {
-							$modelName = $content['Content']['plugin'] . '.' . $content['Content']['type'];
-						}
-						$models[$content['Content']['type']] = $Model = ClassRegistry::init($modelName);
-					}
-				}
-				$entity = $Model->find('first', ['conditions' => [$Model->name . '.id' => $content['Content']['entity_id']], 'recursive' => 0]);
-				if(!$Model->save($entity, false)) {
-					$result = false;
-				}
-			}
-		}
-		if($result) {
-			$this->SearchIndex->commit();
-			$this->setMessage('検索インデックスの再構築に成功しました。', false, true);
+		if($this->SearchIndex->reconstruct()) {
+			$this->setMessage(__d('baser', '検索インデックスの再構築に成功しました。'), false, true);
 		} else {
-			$this->SearchIndex->roleback();
-			$this->setMessage('検索インデックスの再構築に失敗しました。', true, true);
+			$this->setMessage(__d('baser', '検索インデックスの再構築に失敗しました。'), true, true);
 		}
 		$this->redirect(['action' => 'index']);
 	}

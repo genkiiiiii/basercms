@@ -64,10 +64,10 @@ class BlogCategoryTest extends BaserTestCase {
 		$this->assertFalse($this->BlogCategory->validates());
 
 		$this->assertArrayHasKey('name', $this->BlogCategory->validationErrors);
-		$this->assertEquals('ブログカテゴリ名を入力してください。', current($this->BlogCategory->validationErrors['name']));
+		$this->assertEquals('カテゴリ名を入力してください。', current($this->BlogCategory->validationErrors['name']));
 
 		$this->assertArrayHasKey('title', $this->BlogCategory->validationErrors);
-		$this->assertEquals('ブログカテゴリタイトルを入力してください。', current($this->BlogCategory->validationErrors['title']));
+		$this->assertEquals('カテゴリタイトルを入力してください。', current($this->BlogCategory->validationErrors['title']));
 	}
 
 	public function test桁数チェック異常系() {
@@ -85,10 +85,10 @@ class BlogCategoryTest extends BaserTestCase {
 		$this->assertFalse($this->BlogCategory->validates());
 
 		$this->assertArrayHasKey('name', $this->BlogCategory->validationErrors);
-		$this->assertEquals('ブログカテゴリ名は255文字以内で入力してください。', current($this->BlogCategory->validationErrors['name']));
+		$this->assertEquals('カテゴリ名は255文字以内で入力してください。', current($this->BlogCategory->validationErrors['name']));
 
 		$this->assertArrayHasKey('title', $this->BlogCategory->validationErrors);
-		$this->assertEquals('ブログカテゴリタイトルは255文字以内で入力してください。', current($this->BlogCategory->validationErrors['title']));
+		$this->assertEquals('カテゴリタイトルは255文字以内で入力してください。', current($this->BlogCategory->validationErrors['title']));
 	}
 
 	public function test桁数チェック正常系() {
@@ -123,7 +123,7 @@ class BlogCategoryTest extends BaserTestCase {
 		$this->assertFalse($this->BlogCategory->validates());
 
 		$this->assertArrayHasKey('name', $this->BlogCategory->validationErrors);
-		$this->assertEquals('ブログカテゴリ名は半角のみで入力してください。', current($this->BlogCategory->validationErrors['name']));
+		$this->assertEquals('カテゴリ名は半角のみで入力してください。', current($this->BlogCategory->validationErrors['name']));
 
 		// 重複チェック
 		$this->BlogCategory->create([
@@ -135,7 +135,7 @@ class BlogCategoryTest extends BaserTestCase {
 		$this->assertFalse($this->BlogCategory->validates());
 
 		$this->assertArrayHasKey('name', $this->BlogCategory->validationErrors);
-		$this->assertEquals('入力されたブログカテゴリ名は既に登録されています。', current($this->BlogCategory->validationErrors['name']));
+		$this->assertEquals('入力されたカテゴリ名は既に登録されています。', current($this->BlogCategory->validationErrors['name']));
 	}
 
 /**
@@ -173,9 +173,24 @@ class BlogCategoryTest extends BaserTestCase {
 /**
  * 同じニックネームのカテゴリがないかチェックする
  * 同じブログコンテンツが条件
+ *
+ * @dataProvider duplicateBlogCategoryDataProvider
  */
-	public function testDuplicateBlogCategory() {
-		$this->markTestIncomplete('このテストは、まだ実装されていません。');
+	public function testDuplicateBlogCategory($check, $expected) {
+		$this->BlogCategory->validationParams['blogContentId'] = 1;
+		$result = $this->BlogCategory->duplicateBlogCategory($check);
+		$this->assertEquals($result, $expected);
+	}
+
+	public function duplicateBlogCategoryDataProvider() {
+		return[
+			[['id' => 0], true],
+			[['id' => 1], false],
+			[['name' => 'release'], false],
+			[['title' => 'プレスリリース'], false],
+			[['title' => '親子関係なしカテゴリ'], false],
+			[['title' => 'hoge'], true],
+		];
 	}
 
 /**
@@ -238,7 +253,8 @@ class BlogCategoryTest extends BaserTestCase {
  * 子カテゴリを持っているかどうか
  */
 	public function testHasChild() {
-		$this->markTestIncomplete('このテストは、まだ実装されていません。');
+		$this->assertFalse($this->BlogCategory->hasChild(2));
+		$this->assertTrue($this->BlogCategory->hasChild(1));
 	}
 
 }

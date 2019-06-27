@@ -39,15 +39,15 @@ if(!isset($currentId)) {
 				if($content['Content']['id'] == $currentId) {
 					$liClass .= ' current';
 				}
-				$options = [];
+				$options = ['escape' => true];
 				if(!empty($content['Content']['blank_link'])) {
-					$options = ['target' => '_blank'];
+					$options['target'] = '_blank';
 				}
 				?>
 				<li class="<?php echo $liClass ?>">
 					<?php $this->BcBaser->link($content['Content']['title'], $content['Content']['url'], $options) ?>
 					<?php if (!empty($content['children'])): ?>
-						<?php $this->BcBaser->element('contents_menu', array('tree' => $content['children'], 'level' => $level + 1, 'currentId' => $currentId)) ?>
+						<?php $this->BcBaser->element('contents_menu', ['tree' => $content['children'], 'level' => $level + 1, 'currentId' => $currentId]) ?>
 					<?php endif ?>
 				</li>
 			<?php endif ?>

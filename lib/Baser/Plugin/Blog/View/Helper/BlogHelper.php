@@ -117,7 +117,7 @@ class BlogHelper extends AppHelper {
 	}
 
 /**
- * ブログアカウント名を出力する
+ * ブログのコンテンツ名を出力する
  *
  * @return void
  */
@@ -126,7 +126,7 @@ class BlogHelper extends AppHelper {
 	}
 
 /**
- * ブログアカウント名を取得する
+ * ブログのコンテンツ名を取得する
  *
  * @return string
  */
@@ -190,8 +190,8 @@ class BlogHelper extends AppHelper {
  * @param boolean $link 詳細ページへのリンクをつける場合には、true を指定する（初期値 : true）
  * @return void
  */
-	public function postTitle($post, $link = true) {
-		echo $this->getPostTitle($post, $link);
+	public function postTitle($post, $link = true, $options = []) {
+		echo $this->getPostTitle($post, $link, $options);
 	}
 
 /**
@@ -199,14 +199,24 @@ class BlogHelper extends AppHelper {
  *
  * @param array $post ブログ記事データ
  * @param boolean $link 詳細ページへのリンクをつける場合には、true を指定する（初期値 : true）
+ * @param array $options オプション（初期値：arary()）
+ * 	- `escape` : エスケープ処理を行うかどうか
+ * 	※ その他のオプションについては、HtmlHelper::link() を参照
  * @return string 記事タイトル
  */
-	public function getPostTitle($post, $link = true) {
+	public function getPostTitle($post, $link = true, $options = []) {
+		$options = array_merge([
+			'escape' => true
+		], $options);
+		$title = $post['BlogPost']['name'];
 		if ($link) {
-			return $this->getPostLink($post, $post['BlogPost']['name']);
+			$title = $this->getPostLink($post, $title, $options);
 		} else {
-			return $post['BlogPost']['name'];
+			if(!empty($options['escape'])) {
+				$title = h($title);
+			}
 		}
+		return $title;
 	}
 
 /**
@@ -219,6 +229,10 @@ class BlogHelper extends AppHelper {
  * @return string 記事へのリンク
  */
 	public function getPostLink($post, $title, $options = []) {
+		$options = array_merge([
+			'escape' => true
+		], $options);
+		
 		$url = $this->getPostLinkUrl($post, false);
 
 		// EVENT beforeGetPostLink
@@ -257,13 +271,13 @@ class BlogHelper extends AppHelper {
  * @param bool $base ベースとなるURLを付与するかどうか
  * @return string ブログ記事のURL
  */
-	public function getPostLinkUrl($post, $base = false) {
+	public function getPostLinkUrl($post, $base = true) {
 		$this->setContent($post['BlogPost']['blog_content_id']);
 		if(empty($this->content['url'])) {
 			return false;
 		}
 		$site = BcSite::findByUrl($this->content['url']);
-		$contentUrl = $this->BcBaser->getContentsUrl($this->content['url'], !$this->isSameSiteBlogContent($post['BlogPost']['blog_content_id']), !empty($site->useSubDomain));
+		$contentUrl = $this->BcBaser->getContentsUrl($this->content['url'], !$this->isSameSiteBlogContent($post['BlogPost']['blog_content_id']), !empty($site->useSubDomain), false);
 		$url = $contentUrl . 'archives/' . $post['BlogPost']['no'];
 		if($base) {
 			return $this->url($url);
@@ -313,7 +327,7 @@ class BlogHelper extends AppHelper {
  */
 	public function getPostContent($post, $moreText = true, $moreLink = false, $cut = false) {
 		if ($moreLink === true) {
-			$moreLink = '≫ 続きを読む';
+			$moreLink = __d('baser', '≫ 続きを読む');
 		}
 		$out = '';
 		if ($this->blogContent['use_content']) {
@@ -332,7 +346,7 @@ class BlogHelper extends AppHelper {
 				App::uses('HtmlHelper', 'View/Helper');
 				$this->Html = new HtmlHelper($this->_View);
 			}
-			$out .= '<p class="more">' . $this->Html->link($moreLink, $this->getContentsUrl($post['BlogPost']['blog_content_id']) . 'archives/' . $post['BlogPost']['no'] . '#post-detail', null, null) . '</p>';
+			$out .= '<p class="more">' . $this->Html->link($moreLink, $this->getContentsUrl($post['BlogPost']['blog_content_id'], false) . 'archives/' . $post['BlogPost']['no'] . '#post-detail', null, null) . '</p>';
 		}
 		return $out;
 	}
@@ -470,13 +484,12 @@ class BlogHelper extends AppHelper {
 		}
 		if (!empty($post['BlogTag'])) {
 			foreach ($post['BlogTag'] as $tag) {
-				$url = $this->getTagLinkUrl($crossingId, $tag);
 				if($options['link']) {
-					$tags[] = $this->BcBaser->getLink($tag['name'], $url);	
+					$tags[] = $this->BcBaser->getLink($tag['name'], $this->getTagLinkUrl($crossingId, $tag, false), ['escape' => true]);	
 				} else {
 					$tags[] = [
 						'name' => $tag['name'],
-						'url' => $url
+						'url' => $this->getTagLinkUrl($crossingId, $tag)
 					];
 				}
 			}
@@ -505,7 +518,7 @@ class BlogHelper extends AppHelper {
 	public function getCategoryUrl($blogCategoryId, $options = []) {
 		$options = array_merge([
 			'named' => [],
-			'base' => false
+			'base' => true
 		], $options);
 		if (!isset($this->BlogCategory)) {
 			$this->BlogCategory = ClassRegistry::init('Blog.BlogCategory');
@@ -514,7 +527,7 @@ class BlogHelper extends AppHelper {
 		$blogContentId = $categoryPath[0]['BlogCategory']['blog_content_id'];
 		$this->setContent($blogContentId);
 		$site = BcSite::findByUrl($this->content['url']);
-		$contentUrl = $this->BcBaser->getContentsUrl($this->content['url'], !$this->isSameSiteBlogContent($blogContentId), !empty($site->useSubDomain));
+		$contentUrl = $this->BcBaser->getContentsUrl($this->content['url'], !$this->isSameSiteBlogContent($blogContentId), !empty($site->useSubDomain), false);
 		$path = ['category'];
 		if ($categoryPath) {
 			foreach ($categoryPath as $category) {
@@ -564,7 +577,7 @@ class BlogHelper extends AppHelper {
  * @return void
  */
 	public function author($post) {
-		echo $this->BcBaser->getUserName($post['User']);
+		echo h($this->BcBaser->getUserName($post['User']));
 	}
 
 /**
@@ -790,6 +803,7 @@ class BlogHelper extends AppHelper {
  *	- `num` : 何枚目の画像か順番を指定（初期値 : 1）
  *	- `link` : 詳細ページへのリンクをつけるかどうか（初期値 : true）
  *	- `alt` : ALT属性（初期値 : ブログ記事のタイトル）
+ *	- `output` : 出力形式 tag, url のを指定できる（初期値 : ''）
  * @return string
  */
 	public function getPostImg($post, $options = []) {
@@ -797,12 +811,15 @@ class BlogHelper extends AppHelper {
 		$options = array_merge($_options = [
 			'num' => 1,
 			'link' => true,
-			'alt' => $post['BlogPost']['name']
+			'alt' => $post['BlogPost']['name'],
+			'output' => '', // 出力形式 tag or url
 			], $options);
 		$num = $options['num'];
 		$link = $options['link'];
+		$output = $options['output'];
 		unset($options['num']);
 		unset($options['link']);
+		unset($options['output']);
 
 		$contents = $post['BlogPost']['content'] . $post['BlogPost']['detail'];
 		$pattern = '/<img.*?src="([^"]+)"[^>]*>/is';
@@ -813,6 +830,9 @@ class BlogHelper extends AppHelper {
 		if (isset($matches[1][$num - 1])) {
 			$url = $matches[1][$num - 1];
 			$url = preg_replace('/^' . preg_quote($this->base, '/') . '/', '', $url);
+			if ($output == 'url') {
+				return $url; // 出力形式 が urlなら、URLを返す
+			}
 			$img = $this->BcBaser->getImg($url, $options);
 			if ($link) {
 				return $this->BcBaser->getLink($img, $this->request->params['Content']['url'] . 'archives/' . $post['BlogPost']['no']);
@@ -1105,7 +1125,7 @@ class BlogHelper extends AppHelper {
  * @param array $post ブログ記事
  * @return array
  */
-	private function getNextPost($post) {
+	public function getNextPost($post) {
 		$BlogPost = ClassRegistry::init('Blog.BlogPost');
 		// 投稿日が年月日時分秒が同一のデータの対応の為、投稿日が同じでIDが小さいデータを検索
 		$conditions = [];
@@ -1145,7 +1165,7 @@ class BlogHelper extends AppHelper {
  * @param array $post ブログ記事
  * @return array 
  */
-	private function getPrevPost($post) {
+	public function getPrevPost($post) {
 		$BlogPost = ClassRegistry::init('Blog.BlogPost');
 		// 投稿日が年月日時分秒が同一のデータの対応の為、投稿日が同じでIDが大きいデータを検索
 		$conditions = [];
@@ -1328,7 +1348,7 @@ class BlogHelper extends AppHelper {
  * @param bool $base
  * @return string
  */
-	public function getTagLinkUrl($blogContentId, $tag, $base = false) {
+	public function getTagLinkUrl($blogContentId, $tag, $base = true) {
 		$url = null;
 		if(isset($tag['BlogTag'])) {
 			$tag = $tag['BlogTag'];
@@ -1337,7 +1357,7 @@ class BlogHelper extends AppHelper {
 			$this->setContent($blogContentId);
 			if(!empty($this->content['url'])) {
 				$site = BcSite::findByUrl($this->content['url']);
-				$url = $this->BcBaser->getContentsUrl($this->content['url'], !$this->isSameSiteBlogContent($blogContentId), !empty($site->useSubDomain));
+				$url = $this->BcBaser->getContentsUrl($this->content['url'], !$this->isSameSiteBlogContent($blogContentId), !empty($site->useSubDomain), false);
 				$url = $url . 'archives/tag/' . $tag['name'];
 			}
 		}
@@ -1506,7 +1526,7 @@ class BlogHelper extends AppHelper {
 		], $options);
 
 		if(!$contentsName && empty($options['contentsTemplate'])) {
-			trigger_error('$contentsName を省略時は、contentsTemplate オプションで、コンテンツテンプレート名を指定してください。', E_USER_WARNING);
+			trigger_error(__d('baser', '$contentsName を省略時は、contentsTemplate オプションで、コンテンツテンプレート名を指定してください。'), E_USER_WARNING);
 			return;
 		}
 
@@ -1616,7 +1636,7 @@ class BlogHelper extends AppHelper {
 /**
  * Blogの基本情報を全て取得する
  *
- * @param string $name ブログアカウント名を指定するとそのブログのみの基本情報を返す。空指定(default)で、全てのブログの基本情報。 ex) 'news' （初期値 : ''）
+ * @param string $name ブログのコンテンツ名を指定するとそのブログのみの基本情報を返す。空指定(default)で、全てのブログの基本情報。 ex) 'news' （初期値 : ''）
  * @param array $options オプション（初期値 :array()）
  *	- `sort` : データのソート順 取得出来るフィールドのどれかでソートができる ex) 'created DESC'（初期値 : 'id'）
  *  - `siteId` : サブサイトIDで絞り込む場合に指定する（初期値：0）
@@ -1748,7 +1768,7 @@ class BlogHelper extends AppHelper {
  * @param $blogContentId ブログコンテンツID
  * @return string
  */
-	public function getContentsUrl($blogContentId, $base = false) {
+	public function getContentsUrl($blogContentId, $base = true) {
 		$this->setContent($blogContentId);
 		$site = BcSite::findByUrl($this->content['url']);
 		return $this->BcBaser->getContentsUrl($this->content['url'], !$this->isSameSiteBlogContent($blogContentId), !empty($site->useSubDomain), $base);

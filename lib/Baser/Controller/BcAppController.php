@@ -24,6 +24,7 @@ App::uses('Controller', 'Controller');
  * @package Baser.Controller
  * @property BcAuthConfigureComponent $BcAuthConfigure
  * @property BcAuthComponent $BcAuth
+ * @property BcMessageComponent $BcMessage
  */
 class BcAppController extends Controller {
 
@@ -76,7 +77,7 @@ class BcAppController extends Controller {
  * @var		array
  * @access	public
  */
-	public $components = ['RequestHandler', 'Security', 'Session', 'BcManager', 'Email', 'Flash', 'BcEmail'];
+	public $components = ['RequestHandler', 'Security', 'Session', 'BcManager', 'Email', 'Flash', 'BcEmail', 'BcMessage'];
 
 /**
  * サブディレクトリ
@@ -234,6 +235,11 @@ class BcAppController extends Controller {
 			} catch(Exception $e) {}
 		}
 
+		// DebugKit プラグインが有効な場合、DebugKit Toolbar を表示
+		if(CakePlugin::loaded('DebugKit') && !in_array('DebugKit.Toolbar', $this->components)) {
+			$this->components[] = 'DebugKit.Toolbar';
+		}
+
 		/* 携帯用絵文字のモデルとコンポーネントを設定 */
 		// TODO 携帯をコンポーネントなどで判別し、携帯からのアクセスのみ実行させるようにする
 		// ※ コンストラクト時点で、$this->request->params['prefix']を利用できない為。
@@ -249,6 +255,9 @@ class BcAppController extends Controller {
  * @return	void
  */
 	public function beforeFilter() {
+
+
+
 		parent::beforeFilter();
 
 		$isRequestView = $this->request->is('requestview');
@@ -259,13 +268,17 @@ class BcAppController extends Controller {
 
 		// 設定されたサイトURLとリクエストされたサイトURLが違う場合は設定されたサイトにリダイレクト
 		if($isAdmin) {
-			if($this->request->is('ssl')) {
+			$cmsUrl = Configure::read('BcEnv.cmsUrl');
+			if($cmsUrl) {
+				$siteUrl = Configure::read('BcEnv.cmsUrl');
+			} elseif ($this->request->is('ssl')) {
 				$siteUrl = Configure::read('BcEnv.sslUrl');
 			} else {
 				$siteUrl = Configure::read('BcEnv.siteUrl');				
 			}
 			if($siteUrl && siteUrl() != $siteUrl) {
-				$this->redirect($siteUrl . preg_replace('/^\//', '', Router::reverse($this->request, false)));
+				$webrootReg = '/^' . preg_quote($this->request->webroot, '/') . '/';
+				$this->redirect($siteUrl . preg_replace($webrootReg, '', Router::reverse($this->request, false)));
 			}
 		}
 
@@ -325,15 +338,10 @@ class BcAppController extends Controller {
 
 		// コンソールから利用される場合、$isInstall だけでは判定できないので、BC_INSTALLED も判定に入れる
 		if(!BC_INSTALLED || $isInstall || $isUpdate) {
+			if(!BC_INSTALLED || $isInstall) {
+				$this->theme = array_keys(Configure::read('BcApp.adminNewThemeName'))[0];
+			}
 			return;
-		}
-
-		// Ajax ヘッダー
-		if ($this->request->is('ajax')) {
-			// キャッシュ対策
-			header("Cache-Control: no-cache, must-revalidate");
-			header("Cache-Control: post-check=0, pre-check=0", false);
-			header("Pragma: no-cache");
 		}
 
 		// テーマ内プラグインのテンプレートをテーマに梱包できるようにプラグインパスにテーマのパスを追加
@@ -388,7 +396,7 @@ class BcAppController extends Controller {
 			// ログイン中のユーザーを管理側で削除した場合、ログイン状態を削除する必要がある為
 			// =================================================================
 			$user = $this->BcAuth->user();
-			if ($user && $authConfig) {
+			if ($user && $authConfig && (empty($authConfig['type']) || $authConfig['type'] === 'Form')) {
 				$userModel = $authConfig['userModel'];
 				$User = ClassRegistry::init($userModel);
 				if (strpos($userModel, '.') !== false) {
@@ -414,8 +422,17 @@ class BcAppController extends Controller {
 			}
 		}
 
+		if ($this->request->is('ajax') || isset($this->BcAuth) && $this->BcAuth->user()) {
+			// キャッシュ対策
+			$this->response->header([
+				'Cache-Control' => 'no-cache, must-revalidate, post-check=0, pre-check=0',
+				'Pragma'        => 'no-cache',
+			]);
+		}
+
 		if($isRequestView) {
 			// テーマ、レイアウトとビュー用サブディレクトリの設定
+			$this->setAdminTheme();
 			$this->setTheme();
 			if (isset($this->request->params['prefix']) && $this->name != 'CakeError') {
 				$this->layoutPath = str_replace('_', '/', $this->request->params['prefix']);
@@ -440,7 +457,7 @@ class BcAppController extends Controller {
 					$Permission = ClassRegistry::init('Permission');
 					if ($user) {
 						if (!$Permission->check($this->request->url, $user['user_group_id'])) {
-							$this->setMessage('指定されたページへのアクセスは許可されていません。', true);
+							$this->setMessage(__d('baser', '指定されたページへのアクセスは許可されていません。'), true);
 							$this->redirect($this->BcAuth->loginRedirect);
 						}
 					}
@@ -452,26 +469,48 @@ class BcAppController extends Controller {
 
 /**
  * テーマをセットする
+ * $this->theme にセットする事
+ * 
+ * 優先順位
+ * $this->request->params['Site']['theme'] > $site->theme > $this->siteConfigs['theme']
  *
  * @return void
  */
 	protected function setTheme() {
-		$theme = '';
-		if(!empty($this->request->params['Site']['theme'])) {
+		$theme = null;
+		if (!empty($this->request->params['Site']['theme'])) {
 			$theme = $this->request->params['Site']['theme'];
-		} elseif (!empty($this->siteConfigs['theme'])) {
-			$theme = $this->siteConfigs['theme'];
-		} else {
-			$theme = Configure::read('BcApp.adminTheme');
 		}
-		if (!empty($this->siteConfigs['admin_theme'])) {
-			$adminTheme = $this->siteConfigs['admin_theme'];
-		} else {
-			$adminTheme = Configure::read('BcApp.adminTheme');
-			$this->siteConfigs['admin_theme'] = $adminTheme;
+		if(!$theme) {
+			$site = BcSite::findCurrent();
+			if (!empty($site->theme)) {
+				$theme = $site->theme;
+			}
+		}
+		if (!$theme && !empty($this->siteConfigs['theme'])) {
+			$theme = $this->siteConfigs['theme'];
+		}
+		if(!$theme && BcUtil::isAdminSystem() && $this->adminTheme) {
+			$theme = $this->adminTheme;
 		}
 		$this->theme = $theme;
-		$this->adminTheme = $adminTheme;
+	}
+
+/**
+ * 管理画面用テーマをセットする
+ * $this->adminTheme にセットする事
+ * 
+ * 優先順位
+ * $this->siteConfigs['admin_theme'] > Configure::read('BcApp.adminTheme')
+ *
+ * @return void
+ */
+	protected function setAdminTheme() {
+		$adminTheme = Configure::read('BcApp.adminTheme');
+		if (!$adminTheme && !empty($this->siteConfigs['admin_theme'])) {
+			$adminTheme = $this->siteConfigs['admin_theme'];
+		}
+		$this->adminTheme = $this->siteConfigs['admin_theme'] = $adminTheme;
 	}
 
 /**
@@ -565,22 +604,12 @@ class BcAppController extends Controller {
  * @throws BadRequestException
  */
 	public function _blackHoleCallback($err) {
-		//SSL制限違反は別処理
-		if ($err === 'secure') {
-			$this->sslFail($err);
-			return;
-		}
 
 		$errorMessages = [
-			'auth' => 'バリデーションエラーまたはコントローラ/アクションの不一致によるエラーです。',
-			'csrf' => 'CSRF対策によるエラーです。リクエストに含まれるCSRFトークンが不正または無効である可能性があります。',
-			'get' => 'HTTPメソッド制限違反です。リクエストはHTTP GETである必要があります。',
-			'post' => 'HTTPメソッド制限違反です。リクエストはHTTP PUTである必要があります。',
-			'put' => 'HTTPメソッド制限違反です。リクエストはHTTP PUTである必要があります。',
-			'delete' => 'HTTPメソッド制限違反です。リクエストはHTTP DELETEである必要があります。'
+			'auth' => __d('baser', 'バリデーションエラーまたはコントローラ/アクションの不一致によるエラーです。'),
 		];
 
-		$message = "不正なリクエストと判断されました。";
+		$message = __d('baser', '不正なリクエストと判断されました。');
 
 		if (array_key_exists($err, $errorMessages)) {
 			$message .= "(type:{$err})" . $errorMessages[$err];
@@ -590,37 +619,13 @@ class BcAppController extends Controller {
 	}
 
 /**
- * SSLエラー処理
- *
- * SSL通信が必要なURLの際にSSLでない場合、
- * SSLのURLにリダイレクトさせる
- *
- * @param string $err エラーの種類
- * @return	void
- * @access	protected
- */
-	public function sslFail($err) {
-		if ($err === 'secure') {
-			// 共用SSLの場合、設置URLがサブディレクトリになる場合があるので、$this->request->here は利用せずURLを生成する
-			$url = $this->request->url;
-			if (Configure::read('App.baseUrl')) {
-				$url = 'index.php/' . $url;
-			}
-
-			$url = Configure::read('BcEnv.sslUrl') . $url;
-			$this->redirect($url);
-			exit();
-		}
-	}
-
-/**
  * NOT FOUNDページを出力する
  *
  * @return	void
  * @throws	NotFoundException
  */
 	public function notFound() {
-		throw new NotFoundException('見つかりませんでした。');
+		throw new NotFoundException(__d('baser', '見つかりませんでした。'));
 	}
 
 /**
@@ -674,17 +679,20 @@ class BcAppController extends Controller {
 			$currentPrefix = 'front';
 		}
 		$this->set('currentPrefix', $currentPrefix);
+
+		$user = BcUtil::loginUser();
+		$sessionKey = Configure::read('BcAuthPrefix.admin.sessionKey');
+
 		$authPrefix = Configure::read('BcAuthPrefix.' . $currentPrefix);
-		$user = null;
-		if($authPrefix) {
-			$sessionKey = BcUtil::getLoginUserSessionKey();
-			$user = BcUtil::loginUser($currentPrefix);
-		} else {
-			$sessionKey = Configure::read('BcAuthPrefix.admin.sessionKey');
-			$user = BcUtil::loginUser('admin');
+		if ($authPrefix) {
+			$currentPrefixUser = BcUtil::loginUser($currentPrefix);
+			if ($currentPrefixUser) {
+				$user = $currentPrefixUser;
+				$sessionKey = BcUtil::getLoginUserSessionKey();
+			}
 		}
+
 		/* ログインユーザー */
-		
 		if (BC_INSTALLED && $user && $this->name != 'Installations' && !Configure::read('BcRequest.isUpdater') && !Configure::read('BcRequest.isMaintenance') && $this->name != 'CakeError') {
 			$this->set('user', $user);
 			if (!empty($this->request->params['admin'])) {
@@ -807,11 +815,26 @@ class BcAppController extends Controller {
  * 	- bool agentTemplate : テンプレートの配置場所についてサイト名をサブフォルダとして利用するかどうか（初期値：true）
  * @return bool 送信結果
  */
-		public function sendMail($to, $title = '', $body = '', $options = []) {
+	public function sendMail($to, $title = '', $body = '', $options = []) {
+  		$dbg = debug_backtrace();
+  		if(!empty($dbg[1]['function']) && $dbg[1]['function'] == 'invokeArgs') {
+  			$this->notFound();
+  		}
 		$options = array_merge([
 			'agentTemplate' => true,
 			'template' => 'default'
 		], $options);
+
+		/*** Controller.beforeSendEmail ***/
+		$event = $this->dispatchEvent('beforeSendMail', [
+			'options' => $options
+		]);
+		if ($event !== false) {
+			$this->request->data = $event->result === true ? $event->data['data'] : $event->result;
+			if (!empty($event->data['options'])) {
+				$options = $event->data['options'];
+			}
+		}
 
 		if (!empty($this->siteConfigs['smtp_host'])) {
 			$transport = 'Smtp';
@@ -924,6 +947,7 @@ class BcAppController extends Controller {
 			unset($cc);
 		}
 
+		$toAddress = null;
 		try {
 			// to 送信先アドレス (最初の1人がTOで残りがBCC)
 			if (strpos($to, ',') !== false) {
@@ -944,7 +968,7 @@ class BcAppController extends Controller {
 				$cakeEmail->addTo($to);
 			}
 		} catch(Exception $e) {
-			$this->setMessage($e->getMessage() . ' 送信先のメールアドレスが不正です。',true, false, true);
+			$this->setMessage($e->getMessage() . ' ' . __d('baser', '送信先のメールアドレスが不正です。'),true, false, true);
 			return false;
 		}
 
@@ -979,7 +1003,7 @@ class BcAppController extends Controller {
 		try {
 			$cakeEmail->from($from, $fromName);
 		} catch (Exception $e) {
-			$this->setMessage($e->getMessage() . ' 送信元のメールアドレスが不正です。',true, false, true);
+			$this->setMessage($e->getMessage() . ' ' . __d('baser', '送信元のメールアドレスが不正です。'),true, false, true);
 			return false;
 		}
 
@@ -1020,7 +1044,7 @@ class BcAppController extends Controller {
 
 			$subDir = $plugin = '';
 			// インストール時にSiteは参照できない
-			if ($options['agentTemplate'] && @$this->request->params['Site']['name']) {
+			if ($options['agentTemplate'] && !empty($this->request->params['Site']['name'])) {
 				$subDir = $this->request->params['Site']['name'];
 			}
 
@@ -1530,25 +1554,10 @@ class BcAppController extends Controller {
  * @param bool $saveDblog Dblogに保存するか
  * @param bool $setFlash flash message に保存するか
  * @return void
+ * @deprecated 5.0.0 since 4.1.5 BcMessage に移行
  */
 	public function setMessage($message, $alert = false, $saveDblog = false, $setFlash = true) {
-		if (!isset($this->Session)) {
-			return;
-		}
-		$class = 'notice-message';
-		if ($alert) {
-			$class = 'alert-message';
-		}
-		if($setFlash) {
-			$this->Flash->set($message, [
-				'element' => 'default',
-				'params' => ['class' => $class]
-			]);
-		}
-		if ($saveDblog) {
-			$AppModel = ClassRegistry::init('AppModel');
-			$AppModel->saveDblog($message);
-		}
+		$this->BcMessage->set($message, $alert, $saveDblog, $setFlash);
 	}
 
 /**
@@ -1579,16 +1588,6 @@ class BcAppController extends Controller {
  */
 	protected function getToken() {
 		return $this->request->params['_Token']['key'];
-	}
-
-/**
- * admin用Token取得アクション
- *
- * @return string
- */
-	public function admin_ajax_get_token() {
-		$this->autoRender = false;
-		return $this->getToken();
 	}
 
 /**

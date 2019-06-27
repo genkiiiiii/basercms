@@ -71,30 +71,30 @@ $(function(){
 			<th class="list-tool">
 <?php if ($this->BcBaser->isAdminUser()): ?>
                 <div>
-                    <?php echo $this->BcForm->checkbox('ListTool.checkall', array('title' => '一括選択')) ?>
-                    <?php echo $this->BcForm->input('ListTool.batch', array('type' => 'select', 'options' => array('del' => '削除'), 'empty' => '一括処理')) ?>
-                    <?php echo $this->BcForm->button('適用', array('id' => 'BtnApplyBatch', 'disabled' => 'disabled')) ?>
+                    <?php echo $this->BcForm->checkbox('ListTool.checkall', ['title' => __d('baser', '一括選択')]) ?>
+                    <?php echo $this->BcForm->input('ListTool.batch', ['type' => 'select', 'options' => ['del' => __d('baser', '削除')], 'empty' => __d('baser', '一括処理')]) ?>
+                    <?php echo $this->BcForm->button(__d('baser', '適用'), ['id' => 'BtnApplyBatch', 'disabled' => 'disabled']) ?>
                 </div>
 <?php endif ?>
             </th>
             <th>NO</th>
-            <th>タイプ<br />タイトル</th>
-            <th>コンテンツ内容</th>
-            <th>公開状態</th>
+            <th><?php echo __d('baser', 'タイプ')?><br /><?php echo __d('baser', 'タイトル')?></th>
+            <th><?php echo __d('baser', 'コンテンツ内容')?></th>
+            <th><?php echo __d('baser', '公開状態')?></th>
 			<?php echo $this->BcListTable->dispatchShowHead() ?>
-            <th>登録日<br />更新日</th>
+            <th><?php echo __d('baser', '登録日')?><br /><?php echo __d('baser', '更新日')?></th>
         </tr>
     </thead>
 <tbody>
 	<?php if (!empty($datas)): ?>
 		<?php $count = 0; ?>
 		<?php foreach ($datas as $data): ?>
-			<?php $this->BcBaser->element('search_indices/index_row', array('data' => $data, 'count' => $count)) ?>
+			<?php $this->BcBaser->element('search_indices/index_row', ['data' => $data, 'count' => $count]) ?>
 			<?php $count++; ?>
 		<?php endforeach; ?>
 	<?php else: ?>
 		<tr>
-			<td colspan="<?php echo $this->BcListTable->getColumnNumber() ?>"><p class="no-data">データが見つかりませんでした。</p></td>
+			<td colspan="<?php echo $this->BcListTable->getColumnNumber() ?>"><p class="no-data"><?php echo __d('baser', 'データが見つかりませんでした。')?></p></td>
 		</tr>
 	<?php endif; ?>
 </tbody>

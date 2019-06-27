@@ -26,13 +26,13 @@ $(function(){
 	<?php if (!empty($baserThemes)): ?>
 		<?php $key = 0 ?>
 		<?php foreach ($baserThemes as $data): ?>
-			<?php $this->BcBaser->element('themes/index_row_market', array('data' => $data, 'key' => $key++)) ?>
+			<?php $this->BcBaser->element('themes/index_row_market', ['data' => $data, 'key' => $key++]) ?>
 		<?php endforeach; ?>
 	<?php else: ?>
 		<?php if(strtotime('2014-03-31 17:00:00') >= time()): ?>
-		<li class="no-data">baserマーケットは、2014年3月31日 17時に公開です。お楽しみに！</li>
+		<li class="no-data"><?php echo __d('baser', 'baserマーケットは、2014年3月31日 17時に公開です。お楽しみに！')?></li>
 		<?php else: ?>
-		<li class="no-data">baserマーケットのテーマを読み込めませんでした。</li>
+		<li class="no-data"><?php echo __d('baser', 'baserマーケットのテーマを読み込めませんでした。')?></li>
 		<?php endif ?>
 	<?php endif; ?>
 </ul>

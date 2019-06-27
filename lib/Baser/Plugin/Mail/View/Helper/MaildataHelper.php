@@ -53,28 +53,20 @@ class MaildataHelper extends BcTextHelper {
 
 		switch ($type) {
 			case 'text':
+			case 'tel':
 			case 'textarea':
 			case 'email':
 			case 'hidden':
-				return $value;
-
+			case 'check':
 			case 'radio':
 			case 'select':
-				if (isset($options[$value])) {
-					return $options[$value];
-				}
-				return '';
+				return $value;
 
 			case 'pref':
-				$options = $this->prefList();
-				if (isset($options[$value])) {
-					return $options[$value];
-				}
-				return '';
-
-			case 'check':
-				if (!$options) {
-					return $value;
+				$prefs = $this->prefList();
+				$options = array();
+				foreach($prefs as $pref) {
+					$options[$pref] = $pref;
 				}
 				if (isset($options[$value])) {
 					return $options[$value];
@@ -95,9 +87,7 @@ class MaildataHelper extends BcTextHelper {
 					if ($key != 0) {
 						$out .= " ";
 					}
-					if (isset($options[$data])) {
-						$out .= "・" . $options[$data] . PHP_EOL;
-					}
+					$out .= "・" . $data . PHP_EOL;
 				}
 				return $out;
 
@@ -122,7 +112,7 @@ class MaildataHelper extends BcTextHelper {
 					$value = $this->dateTime($value);
 				}
 				if ($value) {
-					return date('Y年 m月 d日', strtotime($value));
+					return date(__d('baser', 'Y年 m月 d日'), strtotime($value));
 				}
 				return '';
 

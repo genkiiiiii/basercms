@@ -29,7 +29,8 @@ class ContentFoldersControllerEventListener extends BcControllerEventListener {
 	public $events = [
 		'Contents.beforeMove',
 		'Contents.afterMove',
-		'Contents.beforeDelete'
+		'Contents.beforeDelete',
+		'Contents.afterChangeStatus'
 	];
 
 /**
@@ -95,6 +96,7 @@ class ContentFoldersControllerEventListener extends BcControllerEventListener {
 			return;
 		}
 		$Controller = $event->subject();
+		$this->Page->Behaviors->unload('BcCache');
 		$contents = $Controller->Content->children($event->data['data']['Content']['id'], false, ['type', 'entity_id'], 'Content.lft', null, 1, 1);
 		foreach($contents as $content) {
 			if($content['Content']['type'] !== 'Page') {
@@ -104,8 +106,13 @@ class ContentFoldersControllerEventListener extends BcControllerEventListener {
 			$this->Page->createPageTemplate($page);
 			$this->Page->saveSearchIndex($this->Page->createSearchIndex($page));
 		}
-		$Folder = new Folder($this->oldPath);
-		$Folder->delete();
+		$this->Page->Behaviors->load('BcCache');
+		// 別の階層に移動の時は元の固定ページファイルを削除（同一階層の移動の時は削除しない）
+		$nowPath = $this->Page->getContentFolderPath($event->data['data']['Content']['id']);
+		if ($this->oldPath != $nowPath) {
+			$Folder = new Folder($this->oldPath);
+			$Folder->delete();
+		}
 	}
 
 /**
@@ -132,6 +139,23 @@ class ContentFoldersControllerEventListener extends BcControllerEventListener {
 				$this->Page->deleteSearchIndex($page['Page']['id']);
 			}
 		}
+	}
+
+/**
+ * Contents After Change Status
+ *
+ * 一覧から公開設定を変更した場合に検索インデックスを更新する事が目的
+ *
+ * @param CakeEvent $event
+ */
+	public function contentsAfterChangeStatus(CakeEvent $event) {
+		if(empty($event->data['result'])) {
+			return;
+		}
+		$id = $event->data['id'];
+		/* @var SearchIndex $searchIndexModel */
+		$searchIndexModel = ClassRegistry::init('SearchIndex');
+		$searchIndexModel->reconstruct($id);
 	}
 	
 }

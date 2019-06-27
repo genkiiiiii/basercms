@@ -49,7 +49,7 @@ class MailHelper extends AppHelper {
 		}
 		if ($mailContentId) {
 			$MailContent = ClassRegistry::init('Mail.MailContent');
-			$MailContent->expects(array());
+			$MailContent->reduceAssociations([]);
 			$this->mailContent = Hash::extract($MailContent->read(null, $mailContentId), 'MailContent');
 		} elseif (isset($this->_View->viewVars['mailContent'])) {
 			$this->mailContent = $this->_View->viewVars['mailContent']['MailContent'];
@@ -243,7 +243,7 @@ class MailHelper extends AppHelper {
  * @param string $viewFile
  */
 	public function beforeRender($viewFile) {
-		if($this->request->params['controller'] == 'mail' && in_array($this->request->params['action'], ['index', 'confirm'])) {
+		if($this->request->params['controller'] == 'mail' && in_array($this->request->params['action'], ['index', 'confirm', 'submit'])) {
 			// メールフォームをショートコードを利用する際、ショートコードの利用先でキャッシュを利用している場合、
 			// セキュリティコンポーネントで発行するトークンが更新されない為、強制的にキャッシュをオフにする
 			if (!empty($this->request->params['requested'])) {

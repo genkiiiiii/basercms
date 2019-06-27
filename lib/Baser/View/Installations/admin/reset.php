@@ -16,11 +16,16 @@
 $adminPrefix = Configure::read('Routing.prefixes.0');
 ?>
 
+<?php
+$this->BcBaser->i18nScript([
+	'message' => __d('baser', '本当にbaserCMSを初期化してもよろしいですか？')
+]);
+?>
 
 <script type="text/javascript">
 $(function(){
 	$("#InstallationResetForm").submit(function(){
-		if(confirm('本当にbaserCMSを初期化してもよろしいですか？')){
+		if(confirm(bcI18n.message)){
 			return true;
 		}else{
 			return false;
@@ -31,21 +36,21 @@ $(function(){
 
 <?php if (!$complete): ?>
 
-	<p>baserCMSを初期化します。データベースのデータも全て削除されます。</p>
+	<p><?php echo __d('baser', 'baserCMSを初期化します。データベースのデータも全て削除されます。')?></p>
 	<?php if (BC_INSTALLED): ?>
-		<p>データベースのバックアップをとられていない場合は必ずバックアップを保存してから実行してください。</p>
-		<ul><li><?php $this->BcBaser->link('バックアップはこちらから', array('admin' => true, 'controller' => 'tools', 'action' => 'maintenance', 'backup')) ?></li></ul>
+		<p><?php echo __d('baser', 'データベースのバックアップをとられていない場合は必ずバックアップを保存してから実行してください。')?></p>
+		<ul><li><?php $this->BcBaser->link(__d('baser', 'バックアップはこちらから'), ['admin' => true, 'controller' => 'tools', 'action' => 'maintenance', 'backup', '?' => ['backup_encoding' => 'UTF-8']]) ?></li></ul>
 	<?php endif ?>
 	<?php echo $this->BcForm->create('Installation', ['url' => ['action' => 'reset']]) ?>
-	<?php echo $this->BcForm->input('Installation.reset', array('type' => 'hidden', 'value' => true)) ?>
-	<?php echo $this->BcForm->end(array('label' => '初期化する', 'class' => 'button')) ?>
+	<?php echo $this->BcForm->input('Installation.reset', ['type' => 'hidden', 'value' => true]) ?>
+	<?php echo $this->BcForm->end(['label' => __d('baser', '初期化する'), 'class' => 'button']) ?>
 
 <?php else: ?>
 
 	<div class="section">
-		<p>引き続きbaserCMSのインストールを行うには、「インストールページへ」ボタンをクリックしてください。</p>
+		<p><?php echo __d('baser', '引き続きbaserCMSのインストールを行うには、「インストールページへ」ボタンをクリックしてください。')?></p>
 	</div>
 	<div class="submit">
-		<?php $this->BcBaser->link('インストールページへ', '/', array('class' => 'button btn-red')) ?>
+		<?php $this->BcBaser->link(__d('baser', 'インストールページへ'), '/', ['class' => 'button btn-red']) ?>
 	</div>
 <?php endif ?>

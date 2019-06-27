@@ -19,17 +19,17 @@ if(!isset($separator)) {
 	$separator = '&nbsp;&gt;&nbsp;';
 }
 if(!isset($home)) {
-	$home = 'ホーム';
+	$home = __d('baser', 'ホーム');
 }
 $crumbs = $this->BcBaser->getCrumbs();
 if (!empty($crumbs)) {
 	foreach ($crumbs as $key => $crumb) {
 		if ($this->BcArray->last($crumbs, $key)) {
 			if ($this->viewPath != 'home' && $crumb['name']) {
-				$this->BcBaser->addCrumb($crumb['name']);
+				$this->BcBaser->addCrumb(h($crumb['name']));
 			}
 		} else {
-			$this->BcBaser->addCrumb($crumb['name'], $crumb['url']);
+			$this->BcBaser->addCrumb(h($crumb['name']), $crumb['url']);
 		}
 	}
 } elseif (empty($crumbs)) {

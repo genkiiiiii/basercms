@@ -50,14 +50,14 @@ class ContentFoldersController extends AppController {
  */
 	public function admin_add() {
 		if(!$this->request->data) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		$data = $this->ContentFolder->save($this->request->data); 
 		if ($data) {
-			$this->setMessage("フォルダ「{$this->request->data['Content']['title']}」を追加しました。", false, true, false);
+			$this->setMessage(sprintf(__d('baser', 'フォルダ「%s」を追加しました。'), $this->request->data['Content']['title']), false, true, false);
 			echo json_encode($data['Content']);
 		} else {
-			$this->ajaxError(500, '保存中にエラーが発生しました。');
+			$this->ajaxError(500, __d('baser', '保存中にエラーが発生しました。'));
 		}
 		exit();
 	}
@@ -68,17 +68,17 @@ class ContentFoldersController extends AppController {
  * @return void
  */
 	public function admin_edit($entityId) {
-		$this->pageTitle = 'フォルダ編集';
+		$this->pageTitle = __d('baser', 'フォルダ編集');
 		if(!$this->request->data) {
 			$this->request->data = $this->ContentFolder->read(null, $entityId);
 			if(!$this->request->data) {
-				$this->setMessage('無効な処理です。', true);
+				$this->setMessage(__d('baser', '無効な処理です。'), true);
 				$this->redirect(['plugin' => false, 'admin' => true, 'controller' => 'contents', 'action' => 'index']);
 			}
 		} else {
-			if ($this->ContentFolder->save($this->request->data)) {
+			if ($this->ContentFolder->save($this->request->data, ['reconstructSearchIndices' => true])) {
 				clearViewCache();
-				$this->setMessage("フォルダ「{$this->request->data['Content']['title']}」を更新しました。", false, true);
+				$this->setMessage(sprintf(__d('baser', 'フォルダ「%s」を更新しました。'), $this->request->data['Content']['title']), false, true);
 				$this->redirect([
 					'plugin' => '',
 					'controller' => 'content_folders',
@@ -86,7 +86,7 @@ class ContentFoldersController extends AppController {
 					$entityId
 				]);
 			} else {
-				$this->setMessage('保存中にエラーが発生しました。入力内容を確認してください。', true, true);
+				$this->setMessage(__d('baser', '保存中にエラーが発生しました。入力内容を確認してください。'), true, true);
 			}
 		}
 
@@ -95,9 +95,10 @@ class ContentFoldersController extends AppController {
 		if(!empty($site) && $site->theme && $site->theme != $this->siteConfigs['theme']) {
 			$theme[] = $site->theme;
 		}
+		$site = BcSite::findById($this->request->data['Content']['site_id']);
 		$this->set('folderTemplateList', $this->ContentFolder->getFolderTemplateList($this->request->data['Content']['id'], $theme));
 		$this->set('pageTemplateList', $this->Page->getPageTemplateList($this->request->data['Content']['id'], $theme));
-		$this->set('publishLink', $this->request->data['Content']['url']);
+		$this->set('publishLink', $this->Content->getUrl($this->request->data['Content']['url'], true, $site->useSubDomain));
 	}
 
 /**

@@ -26,31 +26,31 @@ class BcWidgetAreaHelper extends AppHelper {
  *  `subDir` (boolean) エレメントのパスについてプレフィックスによるサブディレクトリを追加するかどうか
  *  ※ その他のパラメータについては、View::element() を参照
  */
-	public function show ($no, $options = array()) {
+	public function show ($no, $options = []) {
 
-		$options = array_merge(array(
-			'subDir' => true
-		), $options);
-
+		$options = array_merge([
+			'subDir' => true,
+			'cache' => (empty($_SESSION['Auth'][Configure::read('BcAuthPrefix.admin.sessionKey')])) ? '+1 month' : false
+		], $options);
+		if($options['cache'] === false) {
+			unset($options['cache']);
+		}
 		$WidgetArea = ClassRegistry::init('WidgetArea');
-		$widgetArea = $WidgetArea->find('first', array('conditions' => array('WidgetArea.id' => $no)));
+		$widgetArea = $WidgetArea->find('first', ['conditions' => ['WidgetArea.id' => $no]]);
 
 		if (empty($widgetArea['WidgetArea']['widgets'])) {
 			return;
 		}
 
 		$widgets = BcUtil::unserialize($widgetArea['WidgetArea']['widgets']);
-		usort($widgets, array('BcWidgetAreaHelper', '_widgetSort'));
+		usort($widgets, ['BcWidgetAreaHelper', '_widgetSort']);
 
 		foreach ($widgets as $key => $widget) {
 			$key = key($widget);
 			if ($widget[$key]['status']) {
-				$params = array();
+				$params = [];
 				$plugin = '';
 				$params['widget'] = true;
-				if (empty($_SESSION['Auth'][Configure::read('BcAuthPrefix.admin.sessionKey')]) && !isset($options['cache'])) {
-					$options['cache'] = '+1 month';
-				}
 				$params = am($params, $widget[$key]);
 				$params[$no . '_' . $widget[$key]['id']] = $no . '_' . $widget[$key]['id']; // 同じタイプのウィジェットでキャッシュを特定する為に必要
 				if (!empty($params['plugin'])) {

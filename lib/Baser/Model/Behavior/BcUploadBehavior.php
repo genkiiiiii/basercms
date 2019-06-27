@@ -53,6 +53,13 @@ class BcUploadBehavior extends ModelBehavior {
 	public $savePath = [];
 
 /**
+ * 保存時にファイルの重複確認を行うディレクトリ
+ * 
+ * @var array
+ */
+	public $existsCheckDirs = [];
+
+/**
  * 設定
  * 
  * @var array
@@ -99,6 +106,7 @@ class BcUploadBehavior extends ModelBehavior {
 	public function setup(Model $Model, $settings = array()) {
 		$this->settings[$Model->alias] = Hash::merge([
 			'saveDir' => '',
+			'existsCheckDirs' => [],
 			'fields' => []
 		], $settings);
 		foreach ($this->settings[$Model->alias]['fields'] as $key => $field) {
@@ -122,6 +130,8 @@ class BcUploadBehavior extends ModelBehavior {
 			$Folder->create($this->savePath[$Model->alias]);
 			$Folder->chmod($this->savePath[$Model->alias], 0777, true);
 		}
+
+		$this->existsCheckDirs[$Model->alias] = $this->getExistsCheckDirs($Model);
 
 		App::uses('SessionComponent', 'Controller/Component');
 		$this->Session = new SessionComponent(new ComponentCollection());
@@ -175,8 +185,6 @@ class BcUploadBehavior extends ModelBehavior {
 			if (!empty($data[$field['name']]) && is_array($data[$field['name']]) && $data[$field['name']]['size'] != 0) {
 				if (!empty($data[$field['name']]['name'])) {
 					$upload = true;
-				} else {
-					unset($Model->data[$Model->name][$field['name']]);
 				}
 			} else {
 				if (!empty($Model->data[$Model->name][$field['name'] . '_tmp'])) {
@@ -189,8 +197,6 @@ class BcUploadBehavior extends ModelBehavior {
 					// 新しいデータが送信されず、既存データを引き継ぐ場合は、元のフィールド名に戻す
 					$Model->data[$Model->name][$field['name']] = $Model->data[$Model->name][$field['name'] . '_'];
 					unset($Model->data[$Model->name][$field['name'] . '_']);
-				} elseif(!empty($Model->data[$Model->name][$field['name']]) && is_array($Model->data[$Model->name][$field['name']])) {
-					unset($Model->data[$Model->name][$field['name']]);
 				}
 			}
 			if ($upload) {
@@ -286,7 +292,7 @@ class BcUploadBehavior extends ModelBehavior {
  * @param string $oldValue
  * @return array $requestData
  */
-	public function deleteFileWhileChecking(Model $Model, $fieldSetting, $requestData, $oldValue) {
+	public function deleteFileWhileChecking(Model $Model, $fieldSetting, $requestData, $oldValue = null) {
 		$fieldName = $fieldSetting['name'];
 		if (!empty($requestData[$Model->name][$fieldName . '_delete'])) {
 			if (!$this->tmpId) {
@@ -334,6 +340,13 @@ class BcUploadBehavior extends ModelBehavior {
 		$options = array_merge([
 			'deleteTmpFiles' => true
 		], $options);
+
+		if (empty($requestData[$Model->name][$fieldSetting['name']])
+			|| !is_array($requestData[$Model->name][$fieldSetting['name']])
+		) {
+			return $requestData;
+		}
+
 		if(!$this->tmpId && empty($fieldSetting['upload'])) {
 			if(!empty($requestData[$Model->name][$fieldSetting['name']]) && is_array($requestData[$Model->name][$fieldSetting['name']])) {
 				unset($requestData[$Model->name][$fieldSetting['name']]);
@@ -487,7 +500,14 @@ class BcUploadBehavior extends ModelBehavior {
 		if (!$this->tmpId) {
 			$basename = preg_replace("/\." . $field['ext'] . "$/is", '', $name);
 			$fileName = $prefix . $basename . $suffix . '.' . $field['ext'];
-			if(file_exists($this->savePath[$Model->alias] . $fileName)) {
+			$existsFile = false;
+			foreach ($this->existsCheckDirs[$Model->alias] as $existsCheckDir) {
+				if (file_exists($existsCheckDir . $fileName)) {
+					$existsFile = true;
+					break;
+				}
+			}
+			if ($existsFile) {
 				if(preg_match('/(.+_)([0-9]+)$/', $basename, $matches)) {
 					$basename = $matches[1] . ((int) $matches[2] + 1);
 				} else {
@@ -675,6 +695,13 @@ class BcUploadBehavior extends ModelBehavior {
 			if (!$fieldName || ($fieldName && $fieldName == $field['name'])) {
 				if (!empty($Model->data[$Model->name][$field['name']])) {
 					$file = $Model->data[$Model->name][$field['name']];
+
+					// DBに保存されているファイル名から拡張子を取得する
+					preg_match('/\.([^.]+)\z/', $file, $match);
+					if (!empty($match[1])) {
+						$field['ext'] = $match[1];
+					}
+
 					$this->delFile($Model, $file, $field);
 				}
 			}
@@ -996,6 +1023,26 @@ class BcUploadBehavior extends ModelBehavior {
 	}
 
 /**
+ * 保存時にファイルの重複確認を行うディレクトリのリストを取得する
+ * 
+ * @param Model $Model
+ * @return array $existsCheckDirs
+ */
+	private function getExistsCheckDirs(Model $Model) {
+		$existsCheckDirs = [];
+		$existsCheckDirs[] = $this->savePath[$Model->alias];
+
+		$basePath = WWW_ROOT . 'files' . DS;
+		if ($this->settings[$Model->alias]['existsCheckDirs']) {
+			foreach ($this->settings[$Model->alias]['existsCheckDirs'] as $existsCheckDir) {
+				$existsCheckDirs[] = $basePath . $existsCheckDir . DS;
+			}
+		}
+		
+		return $existsCheckDirs;
+	}
+
+/**
  * 既に存在するデータのファイルを削除する
  * 
  * @param Model $Model
@@ -1042,6 +1089,11 @@ class BcUploadBehavior extends ModelBehavior {
 					} else {
 						continue;
 					}
+				}
+
+				// ファイル名の重複を回避する為の処理、元画像ファイルと同様に、コピー画像ファイルにも対応する
+				if (isset($Model->data[$Model->alias]['name']['name']) && $fileName !== $Model->data[$Model->alias]['name']['name']) {
+					$Model->data[$Model->alias]['name']['name'] = $fileName;
 				}
 				$copy['name'] = $field['name'];
 				$copy['ext'] = $field['ext'];

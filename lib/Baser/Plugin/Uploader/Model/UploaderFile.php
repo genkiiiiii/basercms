@@ -31,30 +31,11 @@ class UploaderFile extends AppModel {
  */
 	public $actsAs = [
 		'BcUpload' => [
-			'saveDir' => "uploads",
+			'saveDir' => 'uploads',
+			'existsCheckDirs' => ['uploads/limited'],
 			'fields' => [
 				'name' => ['type'	=> 'all']
 	]]];
-
-/**
- * バリデーション
- *
- * @var array
- */
-	public $validate = [
-		'publish_begin' => [
-			'checkPeriod' => [
-				'rule' => 'checkPeriod',
-				'message' => '公開期間が不正です。'
-			]
-		],
-		'publish_end' => [
-			'checkPeriod' => [
-				'rule' => 'checkPeriod',
-				'message' => '公開期間が不正です。'
-			]
-		]
-	];
 
 /**
  * 公開期間をチェックする
@@ -78,6 +59,28 @@ class UploaderFile extends AppModel {
  * @param	string	$ds
  */
 	public function __construct($id = false, $table = null, $ds = null) {
+		$this->validate = [
+			'publish_begin' => [
+				'checkPeriod' => [
+					'rule' => 'checkPeriod',
+					'message' => __d('baser', '公開期間が不正です。')
+				]
+			],
+			'publish_end' => [
+				'checkPeriod' => [
+					'rule' => 'checkPeriod',
+					'message' => __d('baser', '公開期間が不正です。')
+				]
+			]
+		];
+		if(!BcUtil::isAdminUser()) {
+			$this->validate['name'] = [
+				'fileExt' => [
+					'rule' => ['fileExt', Configure::read('Uploader.allowedExt')],
+					'message' => __d('baser', '許可されていないファイル形式です。')
+				]
+			];
+		}
 		parent::__construct($id, $table, $ds);
 		$sizes = array('large', 'midium', 'small', 'mobile_large', 'mobile_small');
 		$UploaderConfig = ClassRegistry::init('Uploader.UploaderConfig');
@@ -99,6 +102,11 @@ class UploaderFile extends AppModel {
 		$settings = $this->actsAs['BcUpload'];
 		$settings['fields']['name']['imagecopy'] = $imagecopy;
 		$this->Behaviors->attach('BcUpload', $settings);
+
+		// BcUploadBehavior より優先順位をあげる為登録、イベントを登録しなおす
+		$this->getEventManager()->detach([$this, 'beforeDelete'], 'Model.beforeDelete');
+		$this->getEventManager()->attach([$this, 'beforeDelete'], 'Model.beforeDelete', ['priority' => 5]);
+
 	}
 
 /**
@@ -220,9 +228,9 @@ class UploaderFile extends AppModel {
 	public function beforeDelete($cascade = true) {
 		$data = $this->read(null, $this->id);
 		if(!empty($data['UploaderFile']['publish_begin']) || !empty($data['UploaderFile']['publish_end'])) {
-			$this->Behaviors->BcUpload->savePath .= 'limited' . DS;
+			$this->Behaviors->BcUpload->savePath['UploaderFile'] .= 'limited' . DS;
 		} else {
-			$this->Behaviors->BcUpload->savePath = preg_replace('/' . preg_quote('limited' . DS, '/') . '$/', '', $this->Behaviors->BcUpload->savePath);
+			$this->Behaviors->BcUpload->savePath['UploaderFile'] = preg_replace('/' . preg_quote('limited' . DS, '/') . '$/', '', $this->Behaviors->BcUpload->savePath['UploaderFile']);
 		}
 		return parent::beforeDelete($cascade);
 	}

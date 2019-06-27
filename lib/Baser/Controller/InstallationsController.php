@@ -133,7 +133,7 @@ class InstallationsController extends AppController {
  * @return void
  */
 	public function index() {
-		$this->pageTitle = 'baserCMSのインストール';
+		$this->pageTitle = __d('baser', 'baserCMSのインストール');
 		clearAllCache();
 	}
 
@@ -157,7 +157,7 @@ class InstallationsController extends AppController {
 		extract($checkResult);
 
 		$this->set('blRequirementsMet', ($phpXml && $phpGd && $tmpDirWritable && $pagesDirWritable && $configDirWritable && $phpVersionOk && $themeDirWritable && $imgDirWritable && $jsDirWritable && $cssDirWritable));
-		$this->pageTitle = 'baserCMSのインストール [ステップ２]';
+		$this->pageTitle = __d('baser', 'baserCMSのインストール｜ステップ２');
 	}
 
 /**
@@ -194,15 +194,15 @@ class InstallationsController extends AppController {
 					$dbDataPattern = $this->request->data['Installation']['dbDataPattern'];
 				}
 				$result = false;
-				$errorMessage = "データベースの構築中にエラーが発生しました。";
+				$errorMessage = __d('baser', 'データベースの構築中にエラーが発生しました。');
 				try {
 					$this->_deleteAllTables();
-					$result = $this->_constructionDb($dbDataPattern);
+					$result = $this->_constructionDb($dbDataPattern, @$this->request->data['Installation']['adminTheme']);
 				} catch(Exception $e) {
-					$errorMessage .= '<br>' . $e->getMessage();
+					$errorMessage .= "\n" . $e->getMessage();
 				}
 				if ($result) {
-					$this->setMessage("データベースの構築に成功しました。");
+					$this->setMessage(__d('baser', 'データベースの構築に成功しました。'));
 					$this->redirect('step4');
 				} else {
 					$this->setMessage($errorMessage, true);
@@ -210,9 +210,9 @@ class InstallationsController extends AppController {
 			}
 		}
 
-		$dbDataPatterns = $this->BcManager->getAllDefaultDataPatterns();
-		$this->set('dbDataPatterns', $dbDataPatterns);
-		$this->pageTitle = 'baserCMSのインストール [ステップ３]';
+		$this->set('dbDataPatterns', $this->BcManager->getAllDefaultDataPatterns());
+		$this->set('adminThemes', array_merge(['' => '標準テーマ'], BcUtil::getAdminThemeList()));
+		$this->pageTitle = __d('baser', 'baserCMSのインストール｜ステップ３');
 		$this->set('dbsource', $dbsource);
 	}
 
@@ -263,14 +263,15 @@ class InstallationsController extends AppController {
 				} else {
                     $User = ClassRegistry::init('User', 'Model');
                     if ( !empty($User->validationErrors) ) {
-                        $errMsg = implode('<br />', Hash::extract($User->validationErrors, '{s}.{n}'));
+                        $errMsg = implode("\n", Hash::extract($User->validationErrors, '{s}.{n}'));
                     }
-					$this->setMessage('管理ユーザーを作成できませんでした。<br />' . $errMsg, true);
+					$this->setMessage(__d('baser', '管理ユーザーを作成できませんでした。'), true);
+					$this->setMessage($errMsg, true);
 				}
 			}
 		}
 
-		$this->pageTitle = 'baserCMSのインストール [ステップ４]';
+		$this->pageTitle = __d('baser', 'baserCMSのインストール｜ステップ４');
 	}
 
 /**
@@ -284,7 +285,7 @@ class InstallationsController extends AppController {
 	protected function _sendCompleteMail($email, $name, $password) {
 		if (DS !== '\\') {
 			$body = ['name' => $name, 'password' => $password, 'siteUrl' => siteUrl()];
-			$this->sendMail($email, 'baserCMSインストール完了', $body, ['template' => 'installed', 'from' => $email]);
+			$this->sendMail($email, __d('baser', 'baserCMSインストール完了'), $body, ['template' => 'installed', 'from' => $email]);
 		}
 	}
 
@@ -296,7 +297,7 @@ class InstallationsController extends AppController {
  * @return void
  */
 	public function step5() {
-		$this->pageTitle = 'baserCMSのインストール完了！';
+		$this->pageTitle = __d('baser', 'baserCMSのインストール完了！');
 		Cache::config('default', ['engine' => 'File']);
 
 		if (!BC_INSTALLED) {
@@ -402,9 +403,9 @@ class InstallationsController extends AppController {
  * @param type $dbDataPattern データパターン
  * @return boolean
  */
-	protected function _constructionDb($dbDataPattern = null) {
+	protected function _constructionDb($dbDataPattern = null, $adminTheme = '') {
 		$dbConfig = $this->_readDbSetting();
-		if (!$this->BcManager->constructionDb($dbConfig, $dbDataPattern)) {
+		if (!$this->BcManager->constructionDb($dbConfig, $dbDataPattern, $adminTheme)) {
 			return false;
 		}
 		return true;
@@ -541,11 +542,11 @@ class InstallationsController extends AppController {
 		try {
 			$this->BcManager->checkDbConnection($config);
 		} catch (Exception $e) {
-			$message = 'データベースへの接続でエラーが発生しました。データベース設定を見直してください。';
+			$message = __d('baser', 'データベースへの接続でエラーが発生しました。データベース設定を見直してください。');
 			if (preg_match('/with message \'(.+?)\' in/s', $e->getMessage(), $matches)) {
-				$message .= '<br />' . $matches[1];
+				$message .= "\n" . $matches[1];
 			}
-			$this->setMessage($message, true);
+					$this->setMessage(__d('baser', "データベースへの接続でエラーが発生しました。データベース設定を見直してください。\nサーバー上に指定されたデータベースが存在しない可能性が高いです。"), true);
 			return false;
 		}
 
@@ -559,7 +560,7 @@ class InstallationsController extends AppController {
 				case 'BcMysql' :
 					$result = $db->query("SELECT version() as version");
 					if( version_compare($result[0][0]['version'], Configure::read('BcRequire.MySQLVersion')) == -1 ) {
-						$this->setMessage("データベースのバージョンが " . Configure::read('BcRequire.MySQLVersion') . " 以上か確認してください。", true);
+						$this->setMessage(sprintf(__d('baser', 'データベースのバージョンが %s 以上か確認してください。'), Configure::read('BcRequire.MySQLVersion')), true);
 						return false ;
 					}
 					break;
@@ -567,7 +568,7 @@ class InstallationsController extends AppController {
 					$result = $db->query("SELECT version() as version");
 					list(,$version) = explode(" ",$result[0][0]['version']);
 					if( version_compare( trim($version), Configure::read('BcRequire.PostgreSQLVersion')) == -1 ) {
-						$this->setMessage("データベースのバージョンが " . Configure::read('BcRequire.PostgreSQLVersion') . " 以上か確認してください。", true);
+						$this->setMessage(sprintf(__d('baser', 'データベースのバージョンが %s 以上か確認してください。'), Configure::read('BcRequire.PostgreSQLVersion')), true);
 						return false ;
 					}
 					break;
@@ -580,7 +581,7 @@ class InstallationsController extends AppController {
 
 			if ($result) {
 				$db->execute("drop TABLE $randomtablename");
-				$this->setMessage('データベースへの接続に成功しました。');
+				$this->setMessage(__d('baser', 'データベースへの接続に成功しました。'));
 
 				// データベースのテーブルをチェック
 				$tableNames = $db->listSources();
@@ -590,19 +591,19 @@ class InstallationsController extends AppController {
 				});
 
 				if (count($duplicateTableNames) > 0) {
-					$this->setMessage('データベースへの接続に成功しましたが、プレフィックスが重複するテーブルが存在します。' . join(', ', $duplicateTableNames));
+					$this->setMessage(__d('baser', 'データベースへの接続に成功しましたが、プレフィックスが重複するテーブルが存在します。') . join(', ', $duplicateTableNames));
 				}
 				return true;
 			} else {
-				$this->setMessage("データベースへの接続でエラーが発生しました。<br />" . $db->error, true);
+				$this->setMessage(__d('baser', "データベースへの接続でエラーが発生しました。\n") . $db->error, true);
 			}
 		} else {
 
 			if (!$this->Session->read('Message.flash.message')) {
 				if ($db->connection) {
-					$this->setMessage("データベースへの接続でエラーが発生しました。データベース設定を見直してください。<br />サーバー上に指定されたデータベースが存在しない可能性が高いです。", true);
+					$this->setMessage(__d('baser', "データベースへの接続でエラーが発生しました。データベース設定を見直してください。\nサーバー上に指定されたデータベースが存在しない可能性が高いです。"), true);
 				} else {
-					$this->setMessage("データベースへの接続でエラーが発生しました。データベース設定を見直してください。", true);
+					$this->setMessage(__d('baser', 'データベースへの接続でエラーが発生しました。データベース設定を見直してください。'), true);
 				}
 			}
 		}
@@ -658,7 +659,7 @@ class InstallationsController extends AppController {
  * @return void
  */
 	public function alert() {
-		$this->pageTitle = 'baserCMSのインストールを開始できません';
+		$this->pageTitle = __d('baser', 'baserCMSのインストールを開始できません');
 	}
 
 /**
@@ -669,7 +670,7 @@ class InstallationsController extends AppController {
  * @access	public
  */
 	public function reset() {
-		$this->pageTitle = 'baserCMSの初期化';
+		$this->pageTitle = __d('baser', 'baserCMSの初期化');
 		$this->layoutPath = 'admin';
 		$this->layout = 'default';
 		$this->subDir = 'admin';
@@ -682,9 +683,9 @@ class InstallationsController extends AppController {
 			}
 
 			if (!$this->BcManager->reset($dbConfig)) {
-				$this->setMessage('baserCMSを初期化しましたが、正常に処理が行われませんでした。詳細については、エラー・ログを確認してださい。', true);
+				$this->setMessage(__d('baser', 'baserCMSを初期化しましたが、正常に処理が行われませんでした。詳細については、エラー・ログを確認してださい。'), true);
 			} else {
-				$this->setMessage('baserCMSを初期化しました。');
+				$this->setMessage(__d('baser', 'baserCMSを初期化しました。'));
 			}
 			$this->redirect('reset');
 

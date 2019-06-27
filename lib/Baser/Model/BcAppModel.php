@@ -47,7 +47,7 @@ class BcAppModel extends Model {
 				// @deprecated 5.0.0 since 4.0.0 
 				if($this->useDbConfig == 'plugin') {
 					$this->useDbConfig = 'default';
-					$this->log('モデル：' . $this->name . ' BcPluginAppModelの 継承は、バージョン 4.0.0 より非推奨となりました。バージョン 5.0.0 で BcPluginAppModel は削除される予定です。プラグインは AppModel を直接継承してください。', LOG_ALERT);	
+					$this->log(sprintf(__d('baser', 'モデル：%s BcPluginAppModelの 継承は、バージョン 4.0.0 より非推奨となりました。バージョン 5.0.0 で BcPluginAppModel は削除される予定です。プラグインは AppModel を直接継承してください。'), $this->name), LOG_ALERT);	
 				}
 				parent::__construct($id, $table, $ds);
 			} elseif ($db->config['login'] == 'dummy' &&
@@ -58,7 +58,7 @@ class BcAppModel extends Model {
 				// 初期化ページにリダイレクトする
 				$AppController = new AppController();
 				session_start();
-				$_SESSION['Message']['flash'] = ['message' => 'インストールに失敗している可能性があります。<br />インストールを最初からやり直すにはbaserCMSを初期化してください。', 'layout' => 'default'];
+				$_SESSION['Message']['flash'] = ['message' => __d('baser', 'インストールに失敗している可能性があります。<br />インストールを最初からやり直すにはbaserCMSを初期化してください。'), 'layout' => 'default'];
 				$AppController->redirect(BC_BASE_URL . 'installations/reset');
 			}
 		}
@@ -255,6 +255,7 @@ class BcAppModel extends Model {
 			"\xE3\x8F\x8D" => "K.K.",
 			"\xE2\x84\xA1" => "TEL",
 			"\xE2\x84\x96" => "No.",
+			"\xE3\x8B\xBF" => "令和",
 			"\xE3\x8D\xBB" => "平成",
 			"\xE3\x8D\xBC" => "昭和",
 			"\xE3\x8D\xBD" => "大正",
@@ -683,12 +684,12 @@ class BcAppModel extends Model {
 	public function alphaNumeric($check) {
 		if (!$check[key($check)]) {
 			return true;
-		}
-		if (preg_match("/^[a-zA-Z0-9]+$/", $check[key($check)])) {
+ 		}
+ 		if (preg_match("/^[a-zA-Z0-9]+$/", $check[key($check)])) {
 			return true;
-		} else {
+ 		} else {
 			return false;
-		}
+ 		}
 	}
 
 /**
@@ -763,8 +764,13 @@ class BcAppModel extends Model {
  * 
  * @param array $check チェック対象データ
  * @param int $size 最大のファイルサイズ
+ * @deprecated 5.0.0 since 4.1.0.2 アップロードしたファイルのサイズチェックに加えて、アップロード時のエラーコードをログに取るようにするため
  */
 	public function fileSize($check, $size) {
+
+		$this->log(deprecatedMessage(
+			__d('baser', 'メソッド：BcAppModel::fileSize()'), '4.1.0.2', '5.0.0', __d('baser', 'BcAppModel::fileCheck() を利用してください。')
+		), LOG_ALERT);
 		$file = $check[key($check)];
 		if (!empty($file['name'])) {
 			// サイズが空の場合は、HTMLのMAX_FILE_SIZEの制限によりサイズオーバー
@@ -780,15 +786,78 @@ class BcAppModel extends Model {
 	}
 
 /**
+ * ファイルサイズチェック
+ * 
+ * @param array $check チェック対象データ
+ * @param int $size 最大のファイルサイズ
+ * @link http://php.net/manual/ja/features.file-upload.errors.php
+ */
+	public function fileCheck($check, $size) {
+		$file = $check[key($check)];
+
+		$fileErrorCode = Hash::get($file, 'error');
+		if ($fileErrorCode) {
+			// ファイルアップロード時のエラーメッセージを取得する
+			switch ($fileErrorCode) {
+				case 1:	
+					// UPLOAD_ERR_INI_SIZE
+					$this->log('CODE: ' . $fileErrorCode . ' アップロードされたファイルは、php.ini の upload_max_filesize ディレクティブの値を超えています。');
+					break;
+				case 2:
+					// UPLOAD_ERR_FORM_SIZE
+					$this->log('CODE: ' . $fileErrorCode . ' アップロードされたファイルは、HTMLで指定された MAX_FILE_SIZE を超えています。');
+					break;
+				case 3:
+					// UPLOAD_ERR_PARTIAL
+					$this->log('CODE: ' . $fileErrorCode . ' アップロードされたファイルが不完全です。');
+					break;
+				case 4:
+					// UPLOAD_ERR_NO_FILE
+					$this->log('CODE: ' . $fileErrorCode . ' ファイルがアップロードされませんでした。');
+					break;
+				case 6:
+					// UPLOAD_ERR_NO_TMP_DIR
+					$this->log('CODE: ' . $fileErrorCode . ' 一時書込み用のフォルダがありません。テンポラリフォルダの書込み権限を見直してください。');
+					break;
+				case 7:
+					// UPLOAD_ERR_CANT_WRITE
+					$this->log('CODE: ' . $fileErrorCode . ' ディスクへの書き込みに失敗しました。');
+					break;
+				case 8:
+					// UPLOAD_ERR_EXTENSION
+					$this->log('CODE: ' . $fileErrorCode . ' PHPの拡張モジュールがファイルのアップロードを中止しました。');
+					break;
+				default:
+					break;
+			}
+			return false;
+		}
+
+		if (!empty($file['name'])) {
+			// サイズが空の場合は、HTMLのMAX_FILE_SIZEの制限によりサイズオーバー
+			// だが、post_max_size を超えた場合は、ここまで処理がこない可能性がある
+			if (!$file['size']) {
+				return false;
+			}
+			if ($file['size'] > $size) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+/**
  * ファイルの拡張子チェック
  * 
  * @param array $check チェック対象データ
  * @param string $ext 許可する拡張子
  */
-	public function fileExt($check, $ext) {
+	public function fileExt($check, $exts) {
 		$file = $check[key($check)];
 		if (!empty($file['name'])) {
-			$exts = explode(',', $ext);
+			if(!is_array($exts)) {
+				$exts = explode(',', $exts);
+			}
 			$ext = decodeContent($file['type'], $file['name']);
 			if(in_array($ext, $exts)) {
 				return true;
@@ -812,6 +881,19 @@ class BcAppModel extends Model {
 			return false;
 		}
 		return true;
+	}
+
+/**
+ * 半角英数字+アンダーバー＋ハイフンのチェック
+ * 
+ * @param array $check 確認する値を含む配列。先頭の要素のみチェックされる
+ * @return boolean
+ */
+	public function alphaNumericDashUnderscore($check) {
+		$value = array_values($check);
+		$value = $value[0];
+
+		return preg_match('|^[0-9a-zA-Z_-]*$|', $value);
 	}
 
 /**
@@ -1173,11 +1255,13 @@ class BcAppModel extends Model {
 /**
  * 指定したモデル以外のアソシエーションを除外する
  *
- * @param array $auguments アソシエーションを除外しないモデル
+ * @param array $auguments アソシエーションを除外しないモデル。
+ * 　「.（ドット）」で区切る事により、対象モデルにアソシエーションしているモデルがさらに定義しているアソシエーションを対象とする事ができる
+ * 　（例）UserGroup.Permission
  * @param boolean $reset バインド時に１回の find でリセットするかどうか
  * @return void
  */
-	public function expects($arguments, $reset = true) {
+	public function reduceAssociations($arguments, $reset = true) {
 		$models = [];
 
 		foreach ($arguments as $index => $argument) {
@@ -1237,7 +1321,7 @@ class BcAppModel extends Model {
 					$this->__backInnerAssociation = [];
 				}
 				$this->__backInnerAssociation[] = $model;
-				$this->$model->expects(true, $children);
+				$this->$model->reduceAssociations($children, $reset);
 			}
 		}
 
@@ -1662,8 +1746,10 @@ class BcAppModel extends Model {
 /**
  * レコードデータの消毒をおこなう
  * @return array
+ * @deprecated 5.0.0 since 4.1.3 htmlspecialchars を利用してください。
  */
 	public function sanitizeRecord($record) {
+		trigger_error(deprecatedMessage('メソッド：BcAppModel::sanitizeRecord()', '4.0.0', '5.0.0', 'htmlspecialchars を利用してください。'), E_USER_DEPRECATED);
 		foreach ($record as $key => $value) {
 				$record[$key] = $this->sanitize($value);
 		}
@@ -1675,8 +1761,10 @@ class BcAppModel extends Model {
  * 配列には対応しない
  * @param $data
  * @return mixed|string
+ * @deprecated 5.0.0 since 4.1.3 htmlspecialchars を利用してください。
  */
 	public function sanitize($value) {
+		trigger_error(deprecatedMessage('メソッド：BcAppModel::sanitizeRecord()', '4.0.0', '5.0.0', 'htmlspecialchars を利用してください。'), E_USER_DEPRECATED);
 		if (!is_array($value)) {
 			// 既に htmlspecialchars を実行済のものについて一旦元の形式に復元した上で再度サイニタイズ処理をかける。
 			$value = str_replace("&lt;!--", "<!--", $value);
@@ -1685,6 +1773,33 @@ class BcAppModel extends Model {
 		}else {
 			return $value;
 		}
+	}
+	
+/**
+ * スクリプトがが埋め込まれているかチェックする
+ * - 管理グループの場合は無条件に true を返却
+ * - 管理グループ以外の場合に許可されている場合は無条件に true を返却
+ * @param array $check
+ * @return bool
+ */
+	public function containsScript($check) {
+		$events = ['onclick', 'ondblclick', 'onmousedown', 'onmouseup', 'onmouseover', 'onmousemove',
+					'onmouseout', 'onkeypress', 'onkeydown', 'onkeyup', 'onload', 'onunload',
+					'onfocus', 'onblur', 'onsubmit', 'onreset', 'onselect', 'onchange'];
+		if(BcUtil::isAdminUser() || Configure::read('BcApp.allowedPhpOtherThanAdmins')) {
+			return true;
+		}
+		$value = $check[key($check)];
+		if(preg_match('/(<\?=|<\?php|<script)/i', $value)) {
+			return false;
+		}
+		if(preg_match('/<[^>]+?(' . implode('|', $events) . ')=("|\')[^>]*?>/i', $value)) {
+			return false;
+		}
+		if(preg_match('/href=\s*?("|\')[^"\']*?javascript\s*?:/i', $value)) {
+			return false;
+		}
+		return true;
 	}
 
 }

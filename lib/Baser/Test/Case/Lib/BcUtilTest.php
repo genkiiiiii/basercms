@@ -40,12 +40,11 @@ class BcUtilTest extends BaserTestCase {
 		// 前のテストで変更されている為
 		$BcAuth = new BcAuthComponent(new ComponentCollection([]));
 		$BcAuth->setSessionKey('Auth.User');
-		@session_start();
 		parent::setUp();
 	}
 
 	public function tearDown() {
-		@session_destroy();
+		session_unset();
 		parent::tearDown();
 	}
 
@@ -82,14 +81,14 @@ class BcUtilTest extends BaserTestCase {
 /**
  * 管理ユーザーかチェック
  * 
- * @param string $usergroup ユーザーグループ名
+ * @param string $userGroupId ユーザーグループ名
  * @param bool $expect 期待値
  * @dataProvider isAdminUserDataProvider
  */
-	public function testIsAdminUser($usergroup, $expect) {
+	public function testIsAdminUser($userGroupId, $expect) {
 		$Session = new CakeSession();
 		$sessionKey = Configure::read('BcAuthPrefix.admin.sessionKey');
-		$Session->write('Auth.' . $sessionKey . '.UserGroup.name', $usergroup);
+		$Session->write('Auth.' . $sessionKey . '.UserGroup.id', $userGroupId);
 		$result = BcUtil::isAdminUser();
 		$this->assertEquals($expect, $result, '正しく管理ユーザーがチェックできません');
 	}
@@ -101,7 +100,7 @@ class BcUtilTest extends BaserTestCase {
  */
 	public function isAdminUserDataProvider() {
 		return [
-			['admins', true],
+			[Configure::read('BcApp.adminGroupId'), true],
 			['hoge', false],
 			['', false],
 		];
@@ -116,7 +115,6 @@ class BcUtilTest extends BaserTestCase {
 		$this->assertNull($result, 'ログインユーザーのデータを正しく取得できません');
 
 		// ログインしている場合
-		session_id('baser');  // 適当な文字列を与え強制的にコンソール上でセッションを有効にする
 		$Session = new CakeSession();
 		$Session->write('Auth.' . BcUtil::authSessionKey() . '.name', 'admin');
 		$result = BcUtil::loginUser();
@@ -139,7 +137,6 @@ class BcUtilTest extends BaserTestCase {
 		$this->assertEmpty($result, 'ログインユーザーのデータを正しく取得できません');
 
 		// ログインしている場合
-		session_id('baser'); // 適当な文字列を与え強制的にコンソール上でセッションを有効にする
 		$Session = new CakeSession();
 		$Session->write('Auth.' . BcUtil::authSessionKey() . '.name', 'hoge');
 		$result = BcUtil::loginUserName();
@@ -171,26 +168,41 @@ class BcUtilTest extends BaserTestCase {
 /**
  * テーマ梱包プラグインのリストを取得する
  */
-	public function testGetCurrentThemesPlugins() {
-		// プラグインが存在しない場合(デフォルトのbccolumn)
-		$result = BcUtil::getCurrentThemesPlugins();
+	public function testGetThemesPlugins() {
+		$theme = Configure::read('BcSite.theme');
+		$path = BASER_THEMES . $theme . DS . 'Plugin';
+
+		// ダミーのプラグインディレクトリを削除
+		$Folder = new Folder();
+		$Folder->delete($path);
+
+		// プラグインが存在しない場合
+		$result = BcUtil::getThemesPlugins($theme);
 		$expect = [];
 		$this->assertEquals($expect, $result, 'テーマ梱包プラグインのリストを正しく取得できません');
 
 		// プラグインが存在する場合
 		// ダミーのプラグインディレクトリを作成
-		$theme = Configure::read('BcSite.theme');
-		$path = BASER_THEMES . $theme . DS . 'Plugin';
-		$Folder = new Folder();
 		$Folder->create($path . DS . 'dummy1');
 		$Folder->create($path . DS . 'dummy2');
 
-		$result = BcUtil::getCurrentThemesPlugins();
+		$result = BcUtil::getThemesPlugins($theme);
 		// ダミーのプラグインディレクトリを削除
 		$Folder->delete($path);
 
 		$expect = ['dummy1', 'dummy2'];
 		$this->assertEquals($expect, $result, 'テーマ梱包プラグインのリストを正しく取得できません');
+	}
+
+/**
+ * 現在適用しているテーマ梱包プラグインのリストを取得する
+ */
+	public function testGetCurrentThemesPlugins() {
+		$theme = Configure::read('BcSite.theme');
+		$path = BASER_THEMES . $theme . DS . 'Plugin';
+		$Folder = new Folder();
+		$Folder->delete($path);
+		$this->assertEquals([], BcUtil::getCurrentThemesPlugins(), '現在適用しているテーマ梱包プラグインのリストを正しく取得できません。');
 	}
 	
 /**
@@ -307,10 +319,30 @@ class BcUtilTest extends BaserTestCase {
 	}
 
 /**
+ * 全てのテーマリストを取得する
+ */
+	public function testGetAllThemeList() {
+		$themes = BcUtil::getAllThemeList();
+		$this->assertTrue(in_array('nada-icons', $themes));
+		$this->assertTrue(in_array('admin-third', $themes));
+	}
+
+/**
  * テーマリストを取得する
  */
 	public function testGetThemeList() {
-		$this->markTestIncomplete('このテストは、まだ実装されていません。');
+		$themes = BcUtil::getThemeList();
+		$this->assertTrue(in_array('nada-icons', $themes));
+		$this->assertFalse(in_array('admin-third', $themes));
+	}
+
+/**
+ * 管理画面用のテーマリストを取得する
+ */
+	public function testGetAdminThemeList() {
+		$themes = BcUtil::getAdminThemeList();
+		$this->assertFalse(in_array('nada-icons', $themes));
+		$this->assertTrue(array_key_exists('admin-third', $themes));
 	}
 
 /**

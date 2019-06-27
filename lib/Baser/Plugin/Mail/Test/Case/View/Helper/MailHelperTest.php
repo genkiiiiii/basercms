@@ -57,10 +57,11 @@ class MailHelperTest extends BaserTestCase {
 
 /**
  * 説明文の取得結果
- */
+ *
     public function testDescription() {
         $this->markTestIncomplete('このメソッドは、同一クラス内のメソッドをラッピングしているメソッドの為スキップします。');
     }
+ */
 
 /**
  * 説明文を取得する
@@ -121,6 +122,7 @@ class MailHelperTest extends BaserTestCase {
         $expected = array (
             'mail_default' => 'mail_default',
             'default' => 'default',
+			'reset_password' => 'reset_password'
         );
         $this->assertEquals($result, $expected, 'メールテンプレートの取得結果が違います。');
     }
@@ -176,10 +178,11 @@ class MailHelperTest extends BaserTestCase {
     
 /**
  * ブラウザの戻るボタンの生成結果取得
- */
+ *
     public function testToken() {
         $this->markTestIncomplete('このメソッドは、同一クラス内のメソッドをラッピングしているメソッドの為スキップします。');
     }
+ */
 
 /**
  * beforeRender

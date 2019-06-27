@@ -18,7 +18,7 @@ App::uses('Router', 'Routing');
  *
  * @package Baser.Lib
  */
-class BcUtil extends Object {
+class BcUtil extends CakeObject {
 
 /**
  * 管理システムかチェック
@@ -50,10 +50,10 @@ class BcUtil extends Object {
  */
 	public static function isAdminUser() {
 		$user = self::loginUser('admin');
-		if (empty($user['UserGroup']['name'])) {
+		if (empty($user['UserGroup']['id'])) {
 			return false;
 		}
-		return ($user['UserGroup']['name'] == 'admins');
+		return ($user['UserGroup']['id'] == Configure::read('BcApp.adminGroupId'));
 	}
 
 /**
@@ -122,12 +122,21 @@ class BcUtil extends Object {
 	}
 
 /**
- * テーマ梱包プラグインのリストを取得する
- * 
- * @return array
+ * 現在適用しているテーマ梱包プラグインのリストを取得する
+ *
+ * @return array プラグインリスト
  */
 	public static function getCurrentThemesPlugins() {
-		$theme = Configure::read('BcSite.theme');
+		return BcUtil::getThemesPlugins(Configure::read('BcSite.theme'));
+	}
+
+/**
+ * テーマ梱包プラグインのリストを取得する
+ *
+ * @param string $theme テーマ名
+ * @return array プラグインリスト
+ */
+	public static function getThemesPlugins($theme) {
 		$path = BASER_THEMES . $theme . DS . 'Plugin';
 		if(is_dir($path)) {
 			$Folder = new Folder($path);
@@ -337,18 +346,54 @@ class BcUtil extends Object {
 	}
 
 /**
+ * 全てのテーマを取得する
+ * @return array
+ */
+	public static function getAllThemeList() {
+		$paths = [WWW_ROOT . 'theme', BASER_VIEWS . 'Themed'];
+		$themes = [];
+		foreach($paths as $path) {
+			$folder = new Folder($path);
+			$files = $folder->read(true, true);
+			if($files[0]) {
+				foreach($files[0] as $theme) {
+					if ($theme !== 'core' && $theme !== '_notes') {
+						$themes[$theme] = $theme;
+					}
+				}
+			}
+		}
+		return $themes;
+	}
+
+/**
  * テーマリストを取得する
  *
  * @return array
  */
 	public static function getThemeList() {
-		$path = WWW_ROOT . 'theme';
-		$folder = new Folder($path);
-		$files = $folder->read(true, true);
-		$themes = [];
-		foreach ($files[0] as $theme) {
-			if ($theme != 'core' && $theme != '_notes') {
-				$themes[$theme] = $theme;
+		$themes = self::getAllThemeList();
+		foreach ($themes as $key => $theme) {
+			if(preg_match('/^admin\-/', $theme)) {
+				unset($themes[$key]);
+			}
+		}
+		return $themes;
+	}
+
+/**
+ * テーマリストを取得する
+ *
+ * @return array
+ */
+	public static function getAdminThemeList() {
+		$themes = self::getAllThemeList();
+		foreach ($themes as $key => $theme) {
+			if(!preg_match('/^admin\-/', $theme)) {
+				unset($themes[$key]);
+			}
+			if($theme === array_keys(Configure::read('BcApp.adminNewThemeName'))[0]) {
+				$themes[$key] = Configure::read('BcApp.adminNewThemeName')[array_keys(Configure::read('BcApp.adminNewThemeName'))[0]];
 			}
 		}
 		return $themes;

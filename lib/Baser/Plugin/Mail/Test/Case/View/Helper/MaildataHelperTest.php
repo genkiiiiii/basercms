@@ -30,10 +30,11 @@ class MaildataHelperTest extends BaserTestCase {
     }
 /**
  * メール表示用のデータを出力する
- */
+ *
     public function testControl() {
         $this->markTestIncomplete('このメソッドは、同一クラス内のメソッドをラッピングしているメソッドの為スキップします。');
     }
+ */
 
 /**
  * メール表示用のデータを出力する
@@ -50,9 +51,9 @@ class MaildataHelperTest extends BaserTestCase {
 
     public function toDisplayStringProvider() {
         $options = [
-            'hoge' => '資料請求',
-            'hello' => 'お問い合わせ',
-            'world' => 'その他'
+            '資料請求' => '資料請求',
+            'お問い合わせ' => 'お問い合わせ',
+            'その他' => 'その他'
         ];
         $get = [
             'hoge',
@@ -64,21 +65,24 @@ class MaildataHelperTest extends BaserTestCase {
             ['textarea', 'hoge', '', 'hoge'],
             ['email', 'hoge', '', 'hoge'],
             ['hidden', 'hoge', '', 'hoge'],
-            ['radio', 'hoge', '',''],
-            ['radio', 'hoge',  $options, '資料請求'],
-            ['radio', 'h', $options, ''],
-            ['select', 'hoge', '',''],
-            ['select', 'hoge',  $options, '資料請求'],
-            ['select', 'h', $options, ''],
-            ['pref', '35', '','山口県'],
-            ['pref', '0', '',''],
-            ['pref', '', '','都道府県'],
-            //TODO 配列がemptyでhogeが返ってくるはずだが、配列がありhogeが返ってこない。問題はなし。
-            ['check', 'hoge', '', ''],
-            ['check', 'hoge', $options, '資料請求'],
+            ['radio', '', '',''],
+            ['radio', '', $options,''],
+            ['radio', 'hoge',  $options, 'hoge'],
+            ['radio', 'h', $options, 'h'],
+            ['select', '', '',''],
+            ['select', '', $options,''],
+            ['select', 'hoge',  $options, 'hoge'],
+            ['select', 'h', $options, 'h'],
+            ['pref', '', '',''],
+            ['pref', '東京都', '','東京都'],
+            ['pref', '福岡県', '','福岡県'],
+            ['check', '', '', ''],
             ['check', '', $options, ''],
+            ['check', 'hoge', '', 'hoge'],
+            ['check', 'hoge', $options, 'hoge'],
+            ['multi_check', '', '', ''],
             ['multi_check', '', $options, ''],
-            ['multi_check', $get, $options,  "・資料請求\n ・お問い合わせ\n ・その他\n"],
+            ['multi_check', $get, $options,  "・hoge\n ・hello\n ・world\n"],
             ['file', 'hoge', $options, '<a href="/admin/mail_messages/attachment/1/hoge">hoge</a>'],
             ['file', 'test/hoge.jpg', $options, '<a href="/admin/mail_messages/attachment/1/test/hoge.jpg" target="_blank"><img src="/admin/mail_messages/attachment/1/test/hoge.jpg" width="400" alt=""/></a>'],
             //TODO 西暦のオーバーフロー処理ができてない
@@ -87,6 +91,7 @@ class MaildataHelperTest extends BaserTestCase {
             ['date_time_calender', '2100/08/32', $options, '1970年 01月 01日'],
             ['date_time_calender', '', $options, ''],
             ['date_time_wareki', 'hoge', $options, ''],
+            ['date_time_wareki', '20200828', $options, '令和 2年 08月 28日'],
             ['date_time_wareki', '19950828', $options, '平成 7年 08月 28日'],
             ['date_time_wareki', '19500828', $options, '昭和 25年 08月 28日'],
             ['date_time_wareki', '1950/08/28', $options, '昭和 25年 08月 28日'],

@@ -59,7 +59,7 @@ class MailMessage extends MailAppModel {
  * 
  * MailMessageモデルは利用前にこのメソッドを呼び出しておく必要あり
  * 
- * @param type $mailContentId
+ * @param int $mailContentId
  * @return boolean
  */
 	public function setup($mailContentId) {
@@ -69,13 +69,27 @@ class MailMessage extends MailAppModel {
 		// 利用するメールフィールド取得
 		App::uses('MailField', 'Mail.Model');
 		$MailContent = ClassRegistry::init('Mail.MailContent');
-		$mailContent = $MailContent->find('first', ['conditions' => ['MailContent.id' => $mailContentId], 'recursive' => 1]);
+		$mailContent = $MailContent->find('first', [
+			'conditions' => ['MailContent.id' => $mailContentId, 'MailField.use_field' => true],
+			'order' => 'MailField.sort ASC',
+			'recursive' => 1,
+			'joins' => [[
+				'type' => 'inner',
+				'table' => 'mail_fields',
+				'alias' => 'MailField',
+				'conditions' => 'MailContent.id = MailField.mail_content_id'
+			]]
+		]);
+		if(!$mailContent) {
+			return false;
+		}
 		$this->mailContent = ['MailContent' => $mailContent['MailContent']];
 		if(!empty($mailContent['MailField'])) {
 			foreach($mailContent['MailField'] as $value) {
 				$this->mailFields[]	= ['MailField' => $value];
 			}
 		}
+
 		// アップロード設定
 		$this->setupUpload($mailContentId);
 		return true;
@@ -169,28 +183,22 @@ class MailMessage extends MailAppModel {
 			$mailField = $mailField['MailField'];
 			if ($mailField['valid'] && !empty($mailField['use_field'])) {
 				// 必須項目
-				if ($mailField['valid'] == 'VALID_NOT_EMPTY') {
+				if ($mailField['valid'] == 'VALID_NOT_EMPTY' || $mailField['valid'] == 'VALID_EMAIL') {
 					if($mailField['type'] == 'file') {
 						if(!isset($this->data['MailMessage'][$mailField['field_name'] . '_tmp'])) {
 							$this->validate[$mailField['field_name']] = array('notBlank' => array(
 									'rule' => array('notFileEmpty'),
-									'message' => '必須項目です。',
+									'message' => __('必須項目です。'),
 									'required' => true
 							));
 						}
 					} else {
 						$this->validate[$mailField['field_name']] = array('notBlank' => array(
 								'rule' => array('notBlank'),
-								'message' => '必須項目です。',
+								'message' => __('必須項目です。'),
 								'required' => true
 						));
 					}
-				// メール形式
-				} elseif ($mailField['valid'] == 'VALID_EMAIL') {
-					$this->validate[$mailField['field_name']] = array('email' => array(
-							'rule' => array('email'),
-							'message' => '形式が不正です。'
-					));
 				// 半角数字
 				} elseif ($mailField['valid'] == '/^(|[0-9]+)$/') {
 					$this->validate[$mailField['field_name']] = array(
@@ -201,10 +209,16 @@ class MailMessage extends MailAppModel {
 				} elseif ($mailField['valid'] == '/^([0-9]+)$/') {
 					$this->validate[$mailField['field_name']] = array(
 							'rule' => '/^([0-9]+)$/',
-							'message' => '半角数字で入力してください。'
+							'message' => __('半角数字で入力してください。')
 					);
 				} else {
 					$this->validate[$mailField['field_name']] = $mailField['valid'];
+				}
+				if (!empty($this->data['MailMessage'][$mailField['field_name']]) && $mailField['valid'] == 'VALID_EMAIL') {
+					$this->validate[$mailField['field_name']] = array('email' => array(
+						'rule' => array('email'),
+						'message' => __('形式が無効です。')
+					));
 				}
 			}
 			// ### 拡張バリデーション
@@ -215,18 +229,29 @@ class MailMessage extends MailAppModel {
 					$options = call_user_func_array('aa', $options);
 					switch ($valid) {
 						case 'VALID_MAX_FILE_SIZE':
-							if(!empty($options['maxFileSize'])) {
-								$this->validate[$mailField['field_name']]['fileSize'] = array(
-									'rule'	=> array('fileSize', $options['maxFileSize'] * 1000 * 1000),
-									'message'	=> 'ファイルサイズがオーバーしています。' . $options['maxFileSize'] . 'MB以内のファイルをご利用ください。'
-								);
+							if (!empty($options['maxFileSize']) && $this->data['MailMessage'][$mailField['field_name']]['error'] !== UPLOAD_ERR_NO_FILE) {
+								switch ($this->data['MailMessage'][$mailField['field_name']]['error']) {
+									case UPLOAD_ERR_INI_SIZE:
+									case UPLOAD_ERR_FORM_SIZE:
+										$errorMessage = __('ファイルサイズがオーバーしています。 %s MB以内のファイルをご利用ください。',
+											$options['maxFileSize']);
+										break;
+									default:
+										$errorMessage = __('何らかの原因でファイルをアップロードできませんでした。Webサイトの管理者に連絡してください。');
+								}
+								$this->validate[$mailField['field_name']]['fileCheck'] = [
+									'rule' => ['fileCheck', $options['maxFileSize'] * 1000 * 1000],
+									'message' => $errorMessage
+								];
+								// 必須入力としている場合、必須エラーが優先され、ファイルサイズオーバーのエラーメッセージとならないため、バリデーションエラーの優先度を入れ替える
+								$this->validate[$mailField['field_name']] = array_reverse($this->validate[$mailField['field_name']]);
 							}
 							break;
 						case 'VALID_FILE_EXT':
 							if(!empty($options['fileExt'])) {
 								$this->validate[$mailField['field_name']]['fileExt'] = array(
 									'rule'	=> array('fileExt', $options['fileExt']),
-									'message'	=> 'ファイル形式が不正です。'
+									'message'	=> __('ファイル形式が無効です。')
 								);
 							}
 							break;
@@ -253,7 +278,7 @@ class MailMessage extends MailAppModel {
 				// マルチチェックボックスのチェックなしチェック
 				if (in_array('VALID_NOT_UNCHECKED', $valids)) {
 					if (empty($data['MailMessage'][$mailField['field_name']])) {
-						$this->invalidate($mailField['field_name'], '必須項目です。');
+						$this->invalidate($mailField['field_name'], __('必須項目です。'));
 					}
 					$dists[$mailField['field_name']][] = @$data['MailMessage'][$mailField['field_name']];
 					// datetimeの空チェック
@@ -261,11 +286,11 @@ class MailMessage extends MailAppModel {
 					if (empty($data['MailMessage'][$mailField['field_name']]['year']) ||
 						empty($data['MailMessage'][$mailField['field_name']]['month']) ||
 						empty($data['MailMessage'][$mailField['field_name']]['day'])) {
-						$this->invalidate($mailField['field_name'], '日付の形式が不正です。');
+						$this->invalidate($mailField['field_name'], __('日付の形式が無効です。'));
 					}
 				} elseif (in_array('VALID_ZENKAKU_KATAKANA', $valids)) {
 					if(!preg_match('/^(|[ァ-ヾ]+)$/u', $data['MailMessage'][$mailField['field_name']])) {
-						$this->invalidate($mailField['field_name'], '全て全角カタカナで入力してください。');
+						$this->invalidate($mailField['field_name'], __('全て全角カタカナで入力してください。'));
 					}
 				}
 			}
@@ -314,7 +339,10 @@ class MailMessage extends MailAppModel {
 			// 対象フィールドがあれば、バリデートグループごとに配列に格納する
 			$valids = explode(',', $mailField['valid_ex']);
 			if (in_array('VALID_GROUP_COMPLATE', $valids) && !empty($mailField['use_field'])) {
-				$dists[$mailField['group_valid']][] = @$data['MailMessage'][$mailField['field_name']];
+				$dists[$mailField['group_valid']][] = [
+					'name' => $mailField['field_name'],
+					'value' => @$data['MailMessage'][$mailField['field_name']]
+				];
 			}
 		}
 		// チェック
@@ -323,16 +351,16 @@ class MailMessage extends MailAppModel {
 		foreach ($dists as $key => $dist) {
 			$i = 0;
 			foreach ($dist as $data) {
-				if ($data) {
+				if (!empty($data['value'])) {
 					$i++;
 				}
 			}
 			$count = count($dist);
 			if ($i > 0 && $i < $count) {
-				$this->invalidate($key . '_not_complate');
-				for ($j = 1; $j <= $count; $j++) {
-					$this->invalidate($key . '_' . $j);
-				}
+ 				$this->invalidate($key . '_not_complate', __('入力データが不完全です。'));
+ 				for ($j = 0; $j < $count; $j++) {
+ 					$this->invalidate($dist[$j]['name']);
+ 				}
 			}
 		}
 	}
@@ -349,12 +377,17 @@ class MailMessage extends MailAppModel {
 		// 対象フィールドを取得
 		foreach ($this->mailFields as $mailField) {
 			$mailField = $mailField['MailField'];
+			if(empty($mailField['use_field'])) {
+				continue;
+			}
 			$valids = explode(',', $mailField['valid_ex']);
 			// 対象フィールドがあれば、バリデートグループごとに配列に格納する
 			if (in_array('VALID_EMAIL_CONFIRM', $valids)) {
-				if (isset($data['MailMessage'][$mailField['field_name']])) {
-					$dists[$mailField['group_valid']][] = $data['MailMessage'][$mailField['field_name']];
-				}
+				$dists[$mailField['group_valid']][] = [
+					'name' => $mailField['field_name'],
+					'value' => @$data['MailMessage'][$mailField['field_name']],
+					'isGroupValidComplate' => in_array('VALID_GROUP_COMPLATE', explode(',', $mailField['valid_ex']))
+				];
 			}
 		}
 		// チェック
@@ -363,12 +396,15 @@ class MailMessage extends MailAppModel {
 			if(count($dist) < 2) {
 				continue;
 			}
-			list($a, $b) = $dist;
 			if(count($dist) == 2){
-				if ($a != $b) {
-					$this->invalidate($key . '_not_same');
-					$this->invalidate($key . '_1');
-					$this->invalidate($key . '_2');
+				if ($dist[0]['value'] !== $dist[1]['value']) {
+					$this->invalidate($key . '_not_same', __('入力データが一致していません。'));
+					if($dist[0]['isGroupValidComplate']) {
+						$this->invalidate($dist[0]['name']);
+					}
+					if($dist[1]['isGroupValidComplate']) {
+						$this->invalidate($dist[1]['name']);
+					}
 				}
 			}
 		}
@@ -557,6 +593,7 @@ class MailMessage extends MailAppModel {
 			"\xE3\x8F\x8D" => "K.K.",
 			"\xE2\x84\xA1" => "TEL",
 			"\xE2\x84\x96" => "No.",
+			"\xE3\x8B\xBF" => "令和",
 			"\xE3\x8D\xBB" => "平成",
 			"\xE3\x8D\xBC" => "昭和",
 			"\xE3\x8D\xBD" => "大正",
@@ -618,7 +655,7 @@ class MailMessage extends MailAppModel {
 		if(is_int($mailContentId)) {
 			return 'mail_message_' . $mailContentId;
 		} else {
-			throw new BcException('createTableNameの引数$mailContentIdはint型しか受けつけていません。');
+			throw new BcException(__d('baser', 'createTableNameの引数$mailContentIdはint型しか受けつけていません。'));
 		}
 	}
 

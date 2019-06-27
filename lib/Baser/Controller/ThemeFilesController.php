@@ -45,15 +45,7 @@ class ThemeFilesController extends AppController {
  * @var array
  * @public protected
  */
-	protected $_tempalteTypes = [
-		'Layouts'	=> 'レイアウトテンプレート',
-		'Elements'	=> 'エレメントテンプレート',
-		'Emails'	=> 'Eメールテンプレート',
-		'etc'		=> 'コンテンツテンプレート',
-		'css'		=> 'スタイルシート',
-		'js'		=> 'Javascript',
-		'img'		=> 'イメージ'
-	];
+	protected $_tempalteTypes = [];
 
 /**
  * コンポーネント
@@ -63,15 +55,28 @@ class ThemeFilesController extends AppController {
 	public $components = ['BcAuth', 'Cookie', 'BcAuthConfigure'];
 
 /**
- * ぱんくずナビ
+ * ThemeFilesController constructor.
  *
- * @var array
+ * @param CakeRequest $request
+ * @param CakeResponse $response
  */
-	public $crumbs = [
-		['name' => 'テーマ管理', 'url' => ['admin' => true, 'controller' => 'themes', 'action' => 'index']]
-	];
+	public function __construct(CakeRequest $request, CakeResponse $response) {
+		parent::__construct($request, $response);
+		$this->_tempalteTypes = [
+			'Layouts'	=> __d('baser', 'レイアウトテンプレート'),
+			'Elements'	=> __d('baser', 'エレメントテンプレート'),
+			'Emails'	=> __d('baser', 'Eメールテンプレート'),
+			'etc'		=> __d('baser', 'コンテンツテンプレート'),
+			'css'		=> __d('baser', 'スタイルシート'),
+			'js'		=> 'Javascript',
+			'img'		=> __d('baser', 'イメージ')
+		];
+		$this->crumbs = [
+			['name' => __d('baser', 'テーマ管理'), 'url' => ['admin' => true, 'controller' => 'themes', 'action' => 'index']]
+		];
+	}
 
-/**
+	/**
  * テーマファイル一覧
  *
  * @return void
@@ -89,9 +94,9 @@ class ThemeFilesController extends AppController {
 		if ($plugin) {
 			$pageTitle .= '：' . $plugin;
 		}
-		$this->pageTitle = '[' . $pageTitle . '] ';
+		$this->pageTitle = $pageTitle;
 		if (!empty($this->_tempalteTypes[$type])) {
-			$this->pageTitle .= $this->_tempalteTypes[$type] . ' 一覧';
+			$this->pageTitle .= sprintf(__d('baser', '｜%s一覧'), $this->_tempalteTypes[$type]);
 		}
 
 		if ($type != 'etc') {
@@ -216,7 +221,7 @@ class ThemeFilesController extends AppController {
 			$this->request->data['ThemeFile']['parent'] = $fullpath;
 		} else {
 
-			$this->ThemeFile->set($this->request->data);
+			$this->ThemeFile->create($this->request->data);
 			if ($this->ThemeFile->validates()) {
 				$fullpath = $fullpath . $this->request->data['ThemeFile']['name'] . '.' . $this->request->data['ThemeFile']['ext'];
 				if (!is_dir(dirname($fullpath))) {
@@ -238,14 +243,14 @@ class ThemeFilesController extends AppController {
 
 			if ($result) {
 				clearViewCache();
-				$this->setMessage('ファイル ' . basename($fullpath) . ' を作成しました。');
+				$this->setMessage(sprintf(__d('baser', 'ファイル %s を作成しました。'), basename($fullpath)));
 				$this->redirect(array_merge(['action' => 'edit', $theme, $type], explode('/', $path), [$this->request->data['ThemeFile']['name'] . '.' . $this->request->data['ThemeFile']['ext']]));
 			} else {
-				$this->setMessage('ファイル ' . basename($fullpath) . ' の作成に失敗しました。', true);
+				$this->setMessage(sprintf(__d('baser', 'ファイル %s の作成に失敗しました。'), basename($fullpath)), true);
 			}
 		}
 
-		$this->pageTitle = '[' . Inflector::camelize($theme) . '] ' . $this->_tempalteTypes[$type] . ' 作成';
+		$this->pageTitle = sprintf(__d('baser', '%s｜%s作成'), Inflector::camelize($theme), $this->_tempalteTypes[$type]);
 		$this->crumbs[] = ['name' => $this->_tempalteTypes[$type], 'url' => ['controller' => 'theme_files', 'action' => 'index', $theme, $type]];
 		$this->subMenuElements = ['theme_files'];
 		$this->set('isWritable', is_writable($fullpath));
@@ -279,6 +284,7 @@ class ThemeFilesController extends AppController {
 			$this->request->data['ThemeFile']['name'] = urldecode(basename($file->name, '.' . $pathinfo['extension']));
 			$this->request->data['ThemeFile']['type'] = $this->_getFileType(urldecode(basename($file->name)));
 			$this->request->data['ThemeFile']['ext'] = $pathinfo['extension'];
+			$this->request->data['ThemeFile']['parent'] = dirname($fullpath) . DS;
 			if ($this->request->data['ThemeFile']['type'] == 'text') {
 				$this->request->data['ThemeFile']['contents'] = $file->read();
 			}
@@ -315,14 +321,14 @@ class ThemeFilesController extends AppController {
 
 			if ($result) {
 				clearViewCache();
-				$this->setMessage('ファイル ' . $filename . ' を更新しました。');
+				$this->setMessage(sprintf(__d('baser', 'ファイル %s を更新しました。'), $filename));
 				$this->redirect(array_merge([$theme, $plugin, $type], explode('/', dirname($path)), [basename($newPath)]));
 			} else {
-				$this->setMessage('ファイル ' . $filename . ' の更新に失敗しました。', true);
+				$this->setMessage(sprintf(__d('baser', 'ファイル %s の更新に失敗しました。'), $filename), true);
 			}
 		}
 
-		$this->pageTitle = '[' . Inflector::camelize($theme) . '] ' . $this->_tempalteTypes[$type] . ' 編集：　' . $filename;
+		$this->pageTitle = sprintf(__d('baser', '%s｜%s編集'), Inflector::camelize($theme), $this->_tempalteTypes[$type]);
 		$this->crumbs[] = ['name' => $this->_tempalteTypes[$type], 'url' => ['controller' => 'theme_files', 'action' => 'index', $theme, $type]];
 		$this->subMenuElements = ['theme_files'];
 		$this->set('currentPath', str_replace(ROOT, '', dirname($fullpath)) . DS);
@@ -351,16 +357,16 @@ class ThemeFilesController extends AppController {
 		if (is_dir($fullpath)) {
 			$folder = new Folder();
 			$result = $folder->delete($fullpath);
-			$target = 'フォルダ';
+			$target = __d('baser', 'フォルダ');
 		} else {
 			$result = @unlink($fullpath);
-			$target = 'ファイル';
+			$target = __d('baser', 'ファイル');
 		}
 
 		if ($result) {
-			$this->setMessage($target . ' ' . $path . ' を削除しました。');
+			$this->setMessage($target . ' ' . sprintf(__d('baser', '%s を削除しました。'), $path));
 		} else {
-			$this->setMessage($target . ' ' . $path . ' の削除に失敗しました。', true);
+			$this->setMessage($target . ' ' . sprintf(__d('baser', '%s の削除に失敗しました。'), $path), true);
 		}
 
 		$this->redirect(array_merge(['action' => 'index', $theme, $type], explode('/', dirname($path))));
@@ -376,12 +382,12 @@ class ThemeFilesController extends AppController {
 		$args = $this->_parseArgs(func_get_args());
 
 		if (!$args) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		extract($args);
 		if (!isset($this->_tempalteTypes[$type])) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		if ($this->_del($args)) {
@@ -401,13 +407,13 @@ class ThemeFilesController extends AppController {
 		if (is_dir($fullpath)) {
 			$folder = new Folder();
 			$result = $folder->delete($fullpath);
-			$target = 'フォルダ';
+			$target = __d('baser', 'フォルダ');
 		} else {
 			$result = @unlink($fullpath);
-			$target = 'ファイル';
+			$target = __d('baser', 'ファイル');
 		}
 		if ($result) {
-			$this->ThemeFile->saveDblog($target . ' ' . $path . ' を削除しました。');
+			$this->ThemeFile->saveDblog($target . ' ' . sprintf(__d('baser', '%s を削除しました。'), $path));
 			return true;
 		} else {
 			return false;
@@ -435,13 +441,13 @@ class ThemeFilesController extends AppController {
 				if (is_dir($fullpath)) {
 					$folder = new Folder();
 					$result = $folder->delete($fullpath);
-					$target = 'フォルダ';
+					$target = __d('baser', 'フォルダ');
 				} else {
 					$result = @unlink($fullpath);
-					$target = 'ファイル';
+					$target = __d('baser', 'ファイル');
 				}
 				if ($result) {
-					$this->ThemeFile->saveDblog($target . ' ' . $path . ' を削除しました。');
+					$this->ThemeFile->saveDblog($target . ' ' . sprintf(__d('baser', '%s を削除しました。'), $path));
 				} else {
 					$result = false;
 				}
@@ -475,10 +481,11 @@ class ThemeFilesController extends AppController {
 		if ($plugin) {
 			$pageTitle .= '：' . $plugin;
 		}
-		$this->pageTitle = '[' . $pageTitle . '] ' . $this->_tempalteTypes[$type] . ' 表示：　' . basename($path);
+		$this->pageTitle = sprintf(__d('baser', '%s｜%s表示'), $pageTitle, $this->_tempalteTypes[$type]);
 		$this->crumbs[] = ['name' => $this->_tempalteTypes[$type], 'url' => ['controller' => 'theme_files', 'action' => 'index', $theme, $type]];
 		$this->subMenuElements = ['theme_files'];
 		$this->set('currentPath', str_replace(ROOT, '', dirname($fullpath)) . '/');
+		$this->set('isWritable', is_writable($fullpath));
 		$this->set('theme', $theme);
 		$this->set('plugin', $plugin);
 		$this->set('type', $type);
@@ -495,12 +502,12 @@ class ThemeFilesController extends AppController {
 		$args = $this->_parseArgs(func_get_args());
 
 		if (!$args) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		extract($args);
 		if (!isset($this->_tempalteTypes[$type])) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		$themeFile = [];
@@ -547,7 +554,7 @@ class ThemeFilesController extends AppController {
 			$this->set('data', $themeFile);
 		} else {
 			$this->ThemeFile->saveDblog($target . ' ' . urldecode($path) . ' のコピーに失敗しました。');
-			$this->ajaxError(500, '上位フォルダのアクセス権限を見直してください。');
+			$this->ajaxError(500, __d('baser', '上位フォルダのアクセス権限を見直してください。'));
 		}
 	}
 
@@ -570,9 +577,9 @@ class ThemeFilesController extends AppController {
 		$Folder->create(dirname($filePath), 0777);
 
 		if (@move_uploaded_file($this->request->data['ThemeFile']['file']['tmp_name'], $filePath)) {
-			$this->setMessage('アップロードに成功しました。');
+			$this->setMessage(__d('baser', 'アップロードに成功しました。'));
 		} else {
-			$this->setMessage('アップロードに失敗しました。', true);
+			$this->setMessage(__d('baser', 'アップロードに失敗しました。'), true);
 		}
 		$this->redirect(array_merge(['action' => 'index', $theme, $type], explode('/', $path)));
 	}
@@ -590,20 +597,20 @@ class ThemeFilesController extends AppController {
 		}
 
 		if (!$this->request->data) {
-			$this->request->data['ThemeFolder']['parent'] = dirname($fullpath);
+			$this->request->data['ThemeFolder']['parent'] = $fullpath;
 		} else {
 			$folder = new Folder();
-			$this->ThemeFolder->set($this->request->data);
+			$this->ThemeFolder->create($this->request->data);
 			if ($this->ThemeFolder->validates() && $folder->create($fullpath . $this->request->data['ThemeFolder']['name'], 0777)) {
 				$this->setMessage('フォルダ ' . $this->request->data['ThemeFolder']['name'] . ' を作成しました。');
 				$this->redirect(array_merge(['action' => 'index', $theme, $type], explode('/', $path)));
 			} else {
-				$this->setMessage('フォルダの作成に失敗しました。', true);
+				$this->setMessage(__d('baser', 'フォルダの作成に失敗しました。'), true);
 			}
 		}
 
 		$this->crumbs[] = ['name' => $this->_tempalteTypes[$type], 'url' => ['controller' => 'theme_files', 'action' => 'index', $theme, $type]];
-		$this->pageTitle = '[' . $theme . '] フォルダ作成：　' . $path;
+		$this->pageTitle = sprintf(__d('baser', '%s｜フォルダ作成'), $theme);
 		$this->subMenuElements = ['theme_files'];
 		$this->set('currentPath', str_replace(ROOT, '', $fullpath));
 		$this->set('isWritable', is_writable($fullpath));
@@ -629,7 +636,7 @@ class ThemeFilesController extends AppController {
 
 		if (!$this->request->data) {
 			$this->request->data['ThemeFolder']['name'] = basename($path);
-			$this->request->data['ThemeFolder']['parent'] = dirname($fullpath);
+			$this->request->data['ThemeFolder']['parent'] = dirname($fullpath) . DS;
 			$this->request->data['ThemeFolder']['pastname'] = basename($path);
 		} else {
 			$newPath = dirname($fullpath) . DS . $this->request->data['ThemeFolder']['name'] . DS;
@@ -641,19 +648,19 @@ class ThemeFilesController extends AppController {
 						$this->setMessage('フォルダ名を ' . $this->request->data['ThemeFolder']['name'] . ' に変更しました。');
 						$this->redirect(array_merge(['action' => 'index', $theme, $type], explode('/', dirname($path))));
 					} else {
-						$this->setMessage('フォルダ名の変更に失敗しました。', true);
+						$this->setMessage(__d('baser', 'フォルダ名の変更に失敗しました。'), true);
 					}
 				} else {
-					$this->setMessage('フォルダ名に変更はありませんでした。', true);
+					$this->setMessage(__d('baser', 'フォルダ名に変更はありませんでした。'), true);
 					$this->redirect(array_merge(['action' => 'index', $theme, $type], explode('/', dirname($path))));
 				}
 			} else {
-				$this->setMessage('フォルダ名の変更に失敗しました。', true);
+				$this->setMessage(__d('baser', 'フォルダ名の変更に失敗しました。'), true);
 			}
 		}
 
 		$pageTitle = $theme;
-		$this->pageTitle = '[' . $pageTitle . '] フォルダ表示：　' . basename($path);
+		$this->pageTitle = sprintf(__d('baser', '%s｜フォルダ表示'), $pageTitle);
 		$this->crumbs[] = ['name' => $this->_tempalteTypes[$type], 'url' => ['controller' => 'theme_files', 'action' => 'index', $theme, $type]];
 		$this->subMenuElements = ['theme_files'];
 		$this->set('currentPath', str_replace(ROOT, '', dirname($fullpath)) . '/');
@@ -686,7 +693,7 @@ class ThemeFilesController extends AppController {
 		if ($plugin) {
 			$pageTitle .= '：' . $plugin;
 		}
-		$this->pageTitle = '[' . $pageTitle . '] フォルダ表示：　' . basename($path);
+		$this->pageTitle = sprintf(__d('baser', '%s｜フォルダ表示'), $pageTitle);
 		$this->crumbs[] = ['name' => $this->_tempalteTypes[$type], 'url' => ['controller' => 'theme_files', 'action' => 'index', $theme, $type]];
 		$this->subMenuElements = ['theme_files'];
 		$this->set('currentPath', str_replace(ROOT, '', dirname($fullpath)) . '/');
@@ -808,7 +815,7 @@ class ThemeFilesController extends AppController {
 		if (copy($fullpath, $themePath)) {
 			chmod($themePath, 0666);
 			$_themePath = str_replace(ROOT, '', $themePath);
-			$this->setMessage('コアファイル ' . basename($path) . ' を テーマ ' . Inflector::camelize($this->siteConfigs['theme']) . ' の次のパスとしてコピーしました。<br />' . $_themePath);
+			$this->setMessage('コアファイル ' . basename($path) . ' を テーマ ' . Inflector::camelize($this->siteConfigs['theme']) . " の次のパスとしてコピーしました。\n" . $_themePath);
 			// 現在のテーマにリダイレクトする場合、混乱するおそれがあるのでとりあえずそのまま
 			//$this->redirect(array_merge(array('action' => 'edit', $this->siteConfigs['theme'], $type), explode('/', $path)));
 		} else {
@@ -846,7 +853,7 @@ class ThemeFilesController extends AppController {
 		$folder->create(dirname($themePath), 0777);
 		if ($folder->copy(['from' => $fullpath, 'to' => $themePath, 'chmod' => 0777, 'skip' => ['_notes']])) {
 			$_themePath = str_replace(ROOT, '', $themePath);
-			$this->setMessage('コアフォルダ ' . basename($path) . ' を テーマ ' . Inflector::camelize($this->siteConfigs['theme']) . ' の次のパスとしてコピーしました。<br />' . $_themePath);
+			$this->setMessage('コアフォルダ ' . basename($path) . ' を テーマ ' . Inflector::camelize($this->siteConfigs['theme']) . " の次のパスとしてコピーしました。\n" . $_themePath);
 			// 現在のテーマにリダイレクトする場合、混乱するおそれがあるのでとりあえずそのまま
 			//$this->redirect(array('action' => 'edit', $this->siteConfigs['theme'], $type, $path));
 		} else {

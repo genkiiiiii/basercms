@@ -25,20 +25,21 @@ class ThemeFile extends AppModel {
 	public $useTable = false;
 
 /**
- * バリデーション
+ * ThemeFile constructor.
  *
- * @var array
+ * @param bool $id
+ * @param null $table
+ * @param null $ds
  */
-	public $validate = [
-		'name' => [
-			['rule' => ['notBlank'],
-				'message' => "テーマファイル名を入力してください。",
-				'required' => true],
-			['rule' => ['duplicateThemeFile'],
-				'message' => '入力されたテーマファイル名は、同一階層に既に存在します。']
-		]
-	];
-
+	public function __construct($id = false, $table = null, $ds = null) {
+		parent::__construct($id, $table, $ds);
+		$this->validate = [
+			'name' => [
+				['rule' => ['notBlank'], 'message' => __d('baser', 'テーマファイル名を入力してください。'), 'required' => true],
+				['rule' => ['duplicateThemeFile'], 'on' => 'create', 'message' => __d('baser', '入力されたテーマファイル名は、同一階層に既に存在します。')]]
+		];
+	}
+	
 /**
  * ファイルの重複チェック
  * 
@@ -55,6 +56,20 @@ class ThemeFile extends AppModel {
 		} else {
 			return true;
 		}
+	}
+
+/**
+ * データの存在確認
+ * validates の、on オプションを動作する為に定義
+ * @param int $id
+ * @return bool
+ */
+	public function exists($id = null) {
+		$data = $this->data['ThemeFile'];
+		if(empty($data['parent']) || empty($data['name']) || empty($data['ext'])) {
+			return false;
+		}
+		return (is_file($data['parent'] . $data['name'] . '.' . $data['ext']) && $this->id !== false);
 	}
 
 }

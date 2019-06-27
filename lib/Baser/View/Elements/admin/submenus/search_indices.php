@@ -12,16 +12,22 @@
 
 /**
  * [ADMIN] 検索インデックスメニュー
+ * @var \BcAppView $this
  */
+echo $this->BcBaser->i18nScript([
+	'reconstructSearchTitle' => __d('baser', '確認'),
+    'reconstructSearchMessage' => __d('baser', '現在の検索インデックスを消去して、再構築します。本当にいいですか？'),
+], ['inline' => true]);
 ?>
 
 
 <script>
 	$(function(){
+		p(bcI18n.reconstructSearchTitle);
 		$("#BtnReconstruct").click(function(){
 			$.bcConfirm.show({
-				title: '確認',
-				message: '現在の検索インデックスを消去して、再構築します。本当にいいですか？',
+				title: bcI18n.reconstructSearchTitle,
+				message: bcI18n.reconstructSearchMessage,
 				ok: function(){
 					$.bcUtil.showLoader();
 					location.href = $("#BtnReconstruct").attr('href');
@@ -32,10 +38,10 @@
 	});
 </script>
 <tr>
-	<th>検索インデックスメニュー</th>
+	<th><?php echo __d('baser', '検索インデックスメニュー')?></th>
 	<td>
 		<ul class="cleafix">
-			<li><?php $this->BcBaser->link('検索インデックス再構築', ['controller' => 'search_indices', 'action' => 'reconstruct'], ['id' => 'BtnReconstruct']) ?></li>
+			<li><?php $this->BcBaser->link(__d('baser', '検索インデックス再構築'), ['controller' => 'search_indices', 'action' => 'reconstruct'], ['id' => 'BtnReconstruct']) ?></li>
 		</ul>
 	</td>
 </tr>

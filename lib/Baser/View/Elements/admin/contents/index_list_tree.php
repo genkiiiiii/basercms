@@ -13,6 +13,11 @@
 /**
  * [ADMIN] 統合コンテンツ一覧
  */
+$PermissionModel = ClassRegistry::init('Permission');
+$deleteDisabled = false;
+if (!$PermissionModel->check('/' . Configure::read('Routing.prefixes.0') . '/contents/delete', $this->viewVars['user']['user_group_id'])) {
+	$deleteDisabled = true;
+}
 ?>
 
 
@@ -63,14 +68,15 @@
 	"contentType":"<?php echo $type ?>",
 	"contentAliasId":"<?php echo $data['Content']['alias_id'] ?>",
 	"contentPlugin":"<?php echo $data['Content']['plugin'] ?>",
-	"contentTitle":"<?php echo addslashes(strip_tags(h($data['Content']['title']))) ?>",
+	"contentTitle":"<?php echo h(str_replace('"', '\"', $data['Content']['title'])) ?>",
 	"contentSiteRoot":"<?php echo (bool) $data['Content']['site_root'] ?>",
 	"editDisabled":"<?php echo $editDisabled ?>",
-	"manageDisabled":"<?php echo $manageDisabled ?>"
+	"manageDisabled":"<?php echo $manageDisabled ?>",
+	"deleteDisabled":"<?php echo $deleteDisabled ?>"
 }'<?php if($open): ?> class="jstree-open"<?php endif ?>>
-			<span><?php echo strip_tags(h($data['Content']['title'])) ?></span>
+			<span><?php echo h($data['Content']['title']) ?></span>
 			<?php if(!empty($data['children'])): ?>
-				<?php $this->BcBaser->element('admin/contents/index_list_tree', array('datas' => $data['children'])) ?>
+				<?php $this->BcBaser->element('admin/contents/index_list_tree', ['datas' => $data['children']]) ?>
 			<?php endif ?>
 		</li>
 	<?php endforeach ?>

@@ -63,55 +63,6 @@ class Content extends AppModel {
 	];
 
 /**
- * バリデーション
- *
- * @var array
- */
-	public $validate = [
-		'id' => [
-			['rule' => 'numeric', 'on' => 'update', 'message' => 'IDに不正な値が利用されています。']
-		],
-		'name' => [
-			['rule' => ['notBlank'],
-				'message' => 'URLを入力してください。'],
-			['rule' => ['bcUtileUrlencodeBlank'],
-				'message' => 'URLはスペース、全角スペース及び、指定の記号(\\\'|`^"(){}[];/?:@&=+$,%<>#!)だけの名前は付けられません。'],
-			['rule' => ['notBlank'],
-				'message' => 'スラッグを入力してください。'],
-			['rule' => ['maxLength', 2083],
-				'message' => 'タイトルは230文字以内で入力してください。'],
-			['rule' => ['duplicateRelatedSiteContent'],
-				'message' => '連携しているサブサイトでスラッグが重複するコンテンツが存在します。重複するコンテンツのスラッグ名を先に変更してください。']
-		],
-		'title' => [
-			['rule' => ['bcUtileUrlencodeBlank'],
-				'message' => 'タイトルはスペース、全角スペース及び、指定の記号(\\\'|`^"(){}[];/?:@&=+$,%<>#!)だけの名前は付けられません。'],
-			['rule' => ['notBlank'],
-				'message' => 'タイトルを入力してください。'],
-			['rule' => ['maxLength', 230],
-				'message' => 'タイトルは230文字以内で入力してください。'],
-		],
-		'self_publish_begin' => [
-			['rule' => ['checkDate'],
-				'message' => '公開開始日に不正な文字列が入っています。']
-		],
-		'self_publish_end' => [
-			['rule' => ['checkDate'],
-				'message' => '公開終了日に不正な文字列が入っています。'],
-			['rule' => ['checkDateAfterThan', 'self_publish_begin'],
-				'message' => '公開終了日は、公開開始日より新しい日付で入力してください。'],
-		],
-		'created_date' => [
-			['rule' => ['checkDate'],
-				'message' => '作成日に不正な文字列が入っています。'],
-		],
-		'modified_date' => [
-			['rule' => ['checkDate'],
-				'message' => '更新日に不正な文字列が入っています。']
-		],
-	];
-
-/**
  * 関連データを更新する
  * 
  * @var bool
@@ -163,10 +114,46 @@ class Content extends AppModel {
 	}
 
 /**
+ * Content constructor.
+ *
+ * @param bool $id
+ * @param null $table
+ * @param null $ds
+ */
+	public function __construct($id = false, $table = null, $ds = null) {
+		parent::__construct($id, $table, $ds);
+		$this->validate = [
+			'id' => [
+				['rule' => 'numeric', 'on' => 'update', 'message' => __d('baser', 'IDに不正な値が利用されています。')]],
+			'name' => [
+				['rule' => ['notBlank'], 'message' => __d('baser', 'URLを入力してください。')],
+				['rule' => ['bcUtileUrlencodeBlank'], 'message' => __d('baser', 'URLはスペース、全角スペース及び、指定の記号(\\\'|`^"(){}[];/?:@&=+$,%<>#!)だけの名前は付けられません。')],
+				['rule' => ['notBlank'], 'message' => __d('baser', 'スラッグを入力してください。')],
+				['rule' => ['maxLength', 2083], 'message' => __d('baser', 'タイトルは230文字以内で入力してください。')],
+				['rule' => ['duplicateRelatedSiteContent'], 'message' => __d('baser', '連携しているサブサイトでスラッグが重複するコンテンツが存在します。重複するコンテンツのスラッグ名を先に変更してください。')]],
+			'title' => [
+				['rule' => ['bcUtileUrlencodeBlank'], 'message' => __d('baser', 'タイトルはスペース、全角スペース及び、指定の記号(\\\'|`^"(){}[];/?:@&=+$,%<>#!)だけの名前は付けられません。')],
+				['rule' => ['notBlank'], 'message' => __d('baser', 'タイトルを入力してください。')],
+				['rule' => ['maxLength', 230], 'message' => __d('baser', 'タイトルは230文字以内で入力してください。')]],
+			'self_publish_begin' => [
+				['rule' => ['checkDate'], 'allowEmpty' => true, 'message' => __d('baser', '公開開始日に不正な文字列が入っています。')]],
+			'self_publish_end' => [
+				['rule' => ['checkDate'], 'allowEmpty' => true, 'message' => __d('baser', '公開終了日に不正な文字列が入っています。')],
+				['rule' => ['checkDateAfterThan', 'self_publish_begin'], 'message' => __d('baser', '公開終了日は、公開開始日より新しい日付で入力してください。')]],
+			'created_date' => [
+				['rule' => ['checkDate'], 'allowEmpty' => true, 'message' => __d('baser', '作成日に不正な文字列が入っています。')]],
+			'modified_date' => [
+				['rule' => ['checkDate'], 'allowEmpty' => true, 'message' => __d('baser', '更新日に不正な文字列が入っています。')]],
+		];
+	}
+
+	/**
+ * サイト設定にて、エイリアスを利用してメインサイトと自動連携するオプションを利用時に、
  * 関連するサブサイトで、関連コンテンツを作成する際、同階層に重複名称のコンテンツがないか確認する
  *
- * 新規の際は、存在するだけでエラー
- * 編集の際は、main_site_content_id が自身のIDでない、alias_id が自身のIDでない場合エラー
+ * 	- 新規の際は、存在するだけでエラー
+ * 	- 編集の際は、main_site_content_id が自身のIDでない、alias_id が自身のIDでない場合エラー
+ *
  * @param $check
  * @return bool
  */
@@ -181,7 +168,10 @@ class Content extends AppModel {
 		if($this->data['Content']['site_id']) {
 			unset($parents[1]);
 		}
-		$baseUrl = '/' . implode('/', $parents) . '/';
+		$baseUrl = '/';
+		if($parents) {
+			$baseUrl = '/' . implode('/', $parents) . '/';
+		}
 		$sites = $this->Site->find('all', ['conditions' => ['Site.main_site_id' => $this->data['Content']['site_id'], 'relate_main_site' => true]]);
 		// URLを取得
 		$urlAry = [];
@@ -692,8 +682,13 @@ class Content extends AppModel {
 		} elseif($id == 1) {
 			$url = '/';
 		} else {
-			// サイト全体のURLを変更する場合、TreeBehavior::getPath() を利用するとかなりの時間がかかる為、
-			// DataSource::query() を利用する
+			// =========================================================================================================
+			// サイト全体のURLを変更する場合、TreeBehavior::getPath() を利用するとかなりの時間がかかる為、DataSource::query() を利用する
+			// 2018/02/04 ryuring
+			// プリペアドステートメントを利用する為、fetchAll() を利用しようとしたが、SQLite のドライバが対応してない様子。
+			// CakePHP３系に対応する際、SQLite を標準のドライバに変更してから、プリペアドステートメントに書き換えていく。
+			// それまでは、SQLインジェクション対策として、値をチェックしてから利用する。
+			// =========================================================================================================
 			$db = $this->getDataSource();
 			$sql = "SELECT lft, rght FROM {$this->tablePrefix}contents AS Content WHERE id = {$id} AND deleted = " . $db->value(false, 'boolean');
 			$content = $db->query($sql, false);
@@ -863,7 +858,7 @@ class Content extends AppModel {
 		if($entityId) {
 			$conditions['Content.entity_id'] = $entityId;
 		}
-		return $this->find('first', ['conditions' => $conditions]);
+		return $this->find('first', ['conditions' => $conditions, 'order' => ['Content.id']]);
 	}
 
 /**
@@ -1077,12 +1072,21 @@ class Content extends AppModel {
 /**
  * コンテンツIDよりURLを取得する
  *
- * @param $id
- * @return string
+ * @param int $id
+ * @return string URL
  */
 	public function getUrlById($id, $full = false) {
+		if (!is_int($id)) {
+			$id = (int) $id;
+			if($id === 0) {
+				return '';	
+			}
+		}
 		$data = $this->find('first', ['conditions' => ['Content.id' => $id]]);
-		return $this->getUrl($data['Content']['url'], $full, $data['Site']['use_subdomain']);
+		if ($data) {
+			return $this->getUrl($data['Content']['url'], $full, $data['Site']['use_subdomain']);
+		}
+		return '';
 	}
 
 /**
@@ -1246,7 +1250,7 @@ class Content extends AppModel {
 		if($newTitle) {
 			$data['Content']['title'] = $newTitle;
 		} else {
-			$data['Content']['title'] .= 'のコピー';
+			$data['Content']['title'] = sprintf(__d('baser', '%s のコピー'), $data['Content']['title']);
 		}
 		$data['Content']['self_publish_begin'] = null;
 		$data['Content']['self_publish_end'] = null;
@@ -1666,6 +1670,7 @@ class Content extends AppModel {
 		$conditions = array_merge($conditions, $this->getConditionAllowPublish());
 		$contents = $this->find('all', [
 			'conditions' => $conditions,
+			'order' => ['Content.id'],
 			'recursive' => 0
 		]);
 		$mainSite = $this->Site->getRootMain();
@@ -1693,15 +1698,19 @@ class Content extends AppModel {
 		if (!$data) {
 			return false;
 		}
-		if ($data['status'] && $data['publish_end'] && $data['publish_end'] != '0000-00-00 00:00:00') {
-			return strtotime($data['publish_end']) - time();
-		} else {
-			// #10680 Modify 2016/01/22 gondoh
-			// 3.0.10 で追加されたViewキャッシュ分離の設定値を、後方互換のため存在しない場合は旧情報で取り込む 
-			$duration = Configure::read('BcCache.viewDuration');
-			if (empty($duration)) $duration = Configure::read('BcCache.duration');
-			return $duration;
+		// #10680 Modify 2016/01/22 gondoh
+		// 3.0.10 で追加されたViewキャッシュ分離の設定値を、後方互換のため存在しない場合は旧情報で取り込む 
+		$duration = Configure::read('BcCache.viewDuration');
+		if (empty($duration)) {
+			$duration = Configure::read('BcCache.duration');
 		}
+		// 固定ページなどの公開期限がviewDulationより短い場合
+		if ($data['status'] && $data['publish_end'] && $data['publish_end'] != '0000-00-00 00:00:00') {
+			if (strtotime($duration) - time() > (strtotime($data['publish_end']) - time())) {
+				$duration = strtotime($data['publish_end']) - time();
+			}
+		}
+		return $duration;
 	}
 
 /**

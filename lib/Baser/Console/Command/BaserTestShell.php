@@ -35,7 +35,7 @@ class BaserTestShell extends TestShell {
 		$currentTheme = Configure::read('BcSite.theme');
 		$testTheme = Configure::read('BcApp.testTheme');
 //		if($currentTheme != $testTheme) {
-//			trigger_error('CLIでのユニットテストは、' . $testTheme . ' テーマを利用する前提となっています。再インストール後にユニットテストを実行してください。', E_USER_ERROR);
+//			trigger_error(sprintf(__d('baser', 'CLIでのユニットテストは、%s テーマを利用する前提となっています。再インストール後にユニットテストを実行してください。'), $testTheme), E_USER_ERROR);
 //			exit();
 //		}
 		// <<<
@@ -127,7 +127,7 @@ class BaserTestShell extends TestShell {
 		}
 
 		if (empty($testCases)) {
-			$this->out(__d('cake_console', "No test cases available \n\n"));
+			$this->out(__d('baser', "有効なテストケースがありません。 \n\n"));
 			return $this->out($this->OptionParser->help());
 		}
 
@@ -141,7 +141,7 @@ class BaserTestShell extends TestShell {
 			$i++;
 		}
 
-		while ($choice = $this->in(__d('cake_console', 'What test case would you like to run?'), null, 'q')) {
+		while ($choice = $this->in(__d('baser', '何のテストケースを実行したいですか？'), null, 'q')) {
 			if (is_numeric($choice) && isset($cases[$choice])) {
 				$this->args[0] = $category;
 				$this->args[1] = $cases[$choice];
@@ -182,26 +182,26 @@ class BaserTestShell extends TestShell {
 		}
 
 		$testFile = $testCase = null;
-
+		$testCaseFolder = str_replace(APP, '', APP_TEST_CASES);
 		if (preg_match('@Test[\\\/]@', $file)) {
-
 			if (substr($file, -8) === 'Test.php') {
-
 				$testCase = substr($file, 0, -8);
 				$testCase = str_replace(DS, '/', $testCase);
-
-				if ($testCase = preg_replace('@.*Test\/Case\/@', '', $testCase)) {
-
+				$testCaseFolderEscaped = str_replace('/', '\/', $testCaseFolder);
+				$testCase = preg_replace('@.*' . $testCaseFolderEscaped . '\/@', '', $testCase);
+				if (!empty($testCase)) {
 					if ($category === 'core') {
 						$testCase = str_replace('lib/Cake', '', $testCase);
 					}
+					// CUSTOMIZE ADD
+					// >>>
 					if ($category === 'baser') {
 						$testCase = str_replace('lib/Baser', '', $testCase);
 					}
+					// <<<
 
 					return $testCase;
 				}
-
 				throw new Exception(__d('cake_dev', 'Test case %s cannot be run via this shell', $testFile));
 			}
 		}
@@ -219,25 +219,27 @@ class BaserTestShell extends TestShell {
 			}
 
 			return $testCase;
+		// CUSTOMIZE ADD
 		} elseif ($category === 'baser') {
-
 			$testCase = str_replace(DS, '/', $file);
 			$testCase = preg_replace('@.*lib/Baser/@', '', $file);
 			$testCase[0] = strtoupper($testCase[0]);
 			$testFile = BASER . 'Test/Case/' . $testCase . 'Test.php';
-
 			if (!file_exists($testFile) && $throwOnMissingFile) {
 				throw new Exception(__d('cake_dev', 'Test case %s not found', $testFile));
 			}
-
 			return $testCase;
+		// <<<
 		}
 
+
 		if ($category === 'app') {
-			$testFile = str_replace(APP, APP . 'Test/Case/', $file) . 'Test.php';
+			$testFile = str_replace(APP, APP_TEST_CASES . '/', $file) . 'Test.php';
 		} else {
 			$testFile = preg_replace(
-				"@((?:plugins|Plugin)[\\/]{$category}[\\/])(.*)$@", '\1Test/Case/\2Test.php', $file
+				"@((?:plugins|Plugin)[\\/]{$category}[\\/])(.*)$@",
+				'\1' . $testCaseFolder . '/\2Test.php',
+				$file
 			);
 		}
 
@@ -247,8 +249,7 @@ class BaserTestShell extends TestShell {
 
 		$testCase = substr($testFile, 0, -8);
 		$testCase = str_replace(DS, '/', $testCase);
-		$testCase = preg_replace('@.*Test/Case/@', '', $testCase);
-
+		$testCase = preg_replace('@.*' . $testCaseFolder . '/@', '', $testCase);
 		return $testCase;
 	}
 
@@ -286,7 +287,7 @@ class BaserTestShell extends TestShell {
 		// >>>
 		//$this->out(__d('cake_console', 'CakePHP Test Shell'));
 		// ---
-		$this->out(__d('cake_console', 'baserCMS Test Shell'));
+		$this->out(__d('baser', 'baserCMS テストシェル'));
 		// <<<
 		
 		$this->hr();
@@ -311,7 +312,7 @@ class BaserTestShell extends TestShell {
 		// >>>
 		//$this->out(__d('cake_console', '<info>Welcome to CakePHP %s Console</info>', 'v' . Configure::version()));
 		// ---
-		$this->out(__d('cake_console', '<info>Welcome to baserCMS %s Console</info>', 'v' . getVersion()));
+		$this->out(__d('baser', '<info>baserCMS %s コンソールへようこそ</info>', 'v' . getVersion()));
 		// <<<
 		
 		$this->hr();

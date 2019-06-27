@@ -34,16 +34,6 @@ class EditorTemplatesController extends AppController {
 	public $subMenuElements = ['site_configs', 'editor_templates'];
 
 /**
- * パンくず設定
- * 
- * @var array
- */
-	public $crumbs = [
-		['name' => 'システム設定', 'url' => ['controller' => 'site_configs', 'action' => 'form']],
-		['name' => 'エディタテンプレート管理', 'url' => ['controller' => 'editor_templates', 'action' => 'index']]
-	];
-
-/**
  * コンポーネント
  *
  * @var array
@@ -57,6 +47,10 @@ class EditorTemplatesController extends AppController {
  */
 	public function beforeFilter() {
 		parent::beforeFilter();
+		$this->crumbs = [
+			['name' => __d('baser', 'システム設定'), 'url' => ['controller' => 'site_configs', 'action' => 'form']],
+			['name' => __d('baser', 'エディタテンプレート管理'), 'url' => ['controller' => 'editor_templates', 'action' => 'index']]
+		];
 		if (!empty($this->siteConfigs['editor']) && $this->siteConfigs['editor'] != 'none') {
 			$this->helpers[] = $this->siteConfigs['editor'];
 		}
@@ -66,7 +60,7 @@ class EditorTemplatesController extends AppController {
  * [ADMIN] 一覧 
  */
 	public function admin_index() {
-		$this->pageTitle = 'エディタテンプレート一覧';
+		$this->pageTitle = __d('baser', 'エディタテンプレート一覧');
 		$this->help = 'editor_templates_index';
 
 		$this->set('datas', $this->EditorTemplate->find('all'));
@@ -76,7 +70,7 @@ class EditorTemplatesController extends AppController {
  * [ADMIN] 新規登録 
  */
 	public function admin_add() {
-		$this->pageTitle = 'エディタテンプレート新規登録';
+		$this->pageTitle = __d('baser', 'エディタテンプレート新規登録');
 		$this->help = 'editor_templates_form';
 
 		if ($this->request->data) {
@@ -87,10 +81,10 @@ class EditorTemplatesController extends AppController {
 				$this->dispatchEvent('afterAdd', [
 					'data' => $result
 				]);
-				$this->setMessage('保存完了');
+				$this->setMessage(__d('baser', '保存完了'));
 				$this->redirect(['action' => 'index']);
 			} else {
-				$this->setMessage('保存中にエラーが発生しました。', true);
+				$this->setMessage(__d('baser', '保存中にエラーが発生しました。'), true);
 			}
 		}
 		$this->render('form');
@@ -102,7 +96,7 @@ class EditorTemplatesController extends AppController {
  * @param int $id 
  */
 	public function admin_edit($id) {
-		$this->pageTitle = 'エディタテンプレート編集';
+		$this->pageTitle = __d('baser', 'エディタテンプレート編集');
 		$this->help = 'editor_templates_form';
 
 		if (!$this->request->data) {
@@ -115,10 +109,10 @@ class EditorTemplatesController extends AppController {
 				$this->dispatchEvent('afterEdit', [
 					'data' => $result
 				]);
-				$this->setMessage('保存完了');
+				$this->setMessage(__d('baser', '保存完了'));
 				$this->redirect(['action' => 'index']);
 			} else {
-				$this->setMessage('保存中にエラーが発生しました。', true);
+				$this->setMessage(__d('baser', '保存中にエラーが発生しました。'), true);
 			}
 		}
 
@@ -133,14 +127,14 @@ class EditorTemplatesController extends AppController {
 	public function admin_delete($id) {
 		$this->_checkSubmitToken();
 		if (!$id) {
-			$this->setMessage('無効なIDです。', true);
+			$this->setMessage(__d('baser', '無効なIDです。'), true);
 			$this->redirect(['action' => 'index']);
 		}
 		$data = $this->EditorTemplate->read(null, $id);
 		if ($this->EditorTemplate->delete($id)) {
-			$this->setMessage('エディタテンプレート「' . $data['EditorTemplate']['name'] . '」を削除しました。', false, true);
+			$this->setMessage(sprintf(__d('baser', 'エディタテンプレート「%s」を削除しました。'), $data['EditorTemplate']['name']), false, true);
 		} else {
-			$this->setMessage('データベース処理中にエラーが発生しました。', true);
+			$this->setMessage(__d('baser', 'データベース処理中にエラーが発生しました。'), true);
 		}
 		$this->redirect(['action' => 'index']);
 	}
@@ -152,11 +146,11 @@ class EditorTemplatesController extends AppController {
 	public function admin_ajax_delete($id) {
 		$this->_checkSubmitToken();
 		if (!$id) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		$data = $this->EditorTemplate->read(null, $id);
 		if ($this->EditorTemplate->delete($id)) {
-			$this->EditorTemplate->saveDbLog('エディタテンプレート「' . $data['EditorTemplate']['name'] . '」を削除しました。');
+			$this->EditorTemplate->saveDbLog(sprintf(__d('baser', 'エディタテンプレート「%s」を削除しました。'), $data['EditorTemplate']['name']));
 			exit(true);
 		}
 		exit();

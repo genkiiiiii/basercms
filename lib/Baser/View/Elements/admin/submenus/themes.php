@@ -17,27 +17,24 @@
 
 
 <tr>
-	<th>テーマ管理メニュー</th>
+	<th><?php echo __d('baser', 'テーマ管理メニュー')?></th>
 	<td>
 		<ul class="cleafix">
-			<li><?php $this->BcBaser->link('テーマ一覧', array('plugin' => null, 'controller' => 'themes', 'action' => 'index')) ?></li>
-			<li><?php $this->BcBaser->link('テーマ新規追加', array('plugin' => null, 'controller' => 'themes', 'action' => 'add')) ?></li>
-			<li><?php $this->BcBaser->link('テーマ設定', array('plugin' => null, 'controller' => 'theme_configs', 'action' => 'form')) ?></li>
-			<li><?php $this->BcBaser->link('コアテンプレート確認', array('plugin' => null, 'controller' => 'theme_files', 'action' => 'index', 'core')) ?></li>
+			<li><?php $this->BcBaser->link(__d('baser', 'テーマ一覧'), ['plugin' => null, 'controller' => 'themes', 'action' => 'index']) ?></li>
+			<li><?php $this->BcBaser->link(__d('baser', 'テーマ新規追加'), ['plugin' => null, 'controller' => 'themes', 'action' => 'add']) ?></li>
+			<li><?php $this->BcBaser->link(__d('baser', 'テーマ設定'), ['plugin' => null, 'controller' => 'theme_configs', 'action' => 'form']) ?></li>
+			<li><?php $this->BcBaser->link(__d('baser', 'コアテンプレート確認'), ['plugin' => null, 'controller' => 'theme_files', 'action' => 'index', 'core']) ?></li>
 			<li>
-				<?php $this->BcBaser->link('テーマダウンロード', array('plugin' => null, 'controller' => 'themes', 'action' => 'download'), array(),
-					"現在適用中のテーマをZIP圧縮してダウンロードします。よろしいですか？") ?>
+				<?php $this->BcBaser->link(__d('baser', 'テーマダウンロード'), ['plugin' => null, 'controller' => 'themes', 'action' => 'download'], [],
+	            __d('baser', '現在適用中のテーマをZIP圧縮してダウンロードします。よろしいですか？')) ?>
 			</li>
 			<li>
-				<?php $this->BcBaser->link('テーマ用初期データダウンロード', array('plugin' => null, 'controller' => 'themes', 'action' => 'download_default_data_pattern'), array(), 
-					"現在のデータベースの状態を元にテーマ用の初期データを生成しダウンロードします。よろしいですか？\n" .
-					"ダウンロードしたデータは、配布用テーマの Config/data/ 内に配置してください。") ?>
+				<?php $this->BcBaser->link(__d('baser', 'テーマ用初期データダウンロード'), ['plugin' => null, 'controller' => 'themes', 'action' => 'download_default_data_pattern'], [],
+					__d('baser', "現在のデータベースの状態を元にテーマ用の初期データを生成しダウンロードします。よろしいですか？\nダウンロードしたデータは、配布用テーマの Config/data/ 内に配置してください。")) ?>
 			</li>
 			<li>
-				<?php $this->BcBaser->link('データリセット', array('plugin' => null, 'controller' => 'themes', 'action' => 'reset_data'), array('class' => 'submit-token'),
-				"現在のデータを、baserCMSコアの初期データでリセットします。よろしいですか？\n\n" .
-				"※ 初期データを読み込むと現在登録されている記事データや設定は全て上書きされますのでご注意ください。\n" .
-				"※ 管理ログは読み込まれず、ユーザー情報はログインしているユーザーのみに初期化されます。") ?>
+				<?php $this->BcBaser->link(__d('baser', 'データリセット'), ['plugin' => null, 'controller' => 'themes', 'action' => 'reset_data'], ['class' => 'submit-token'],
+				__d('baser', "現在のデータを、baserCMSコアの初期データでリセットします。よろしいですか？\n\n※ 初期データを読み込むと現在登録されている記事データや設定は全て上書きされますのでご注意ください。\n※ 管理ログは読み込まれず、ユーザー情報はログインしているユーザーのみに初期化されます。")) ?>
 			</li>
 
 		</ul>

@@ -151,13 +151,8 @@ class BlogController extends BlogAppController {
 
 		// コメント送信用のトークンを出力する為にセキュリティコンポーネントを利用しているが、
 		// 表示用のコントローラーなのでポストデータのチェックは必要ない
-		if (Configure::read('debug') > 0) {
-			$this->Security->validatePost = false;
-			$this->Security->csrfCheck = false;
-		} else {
-			$this->Security->enabled = true;
-			$this->Security->validatePost = false;
-		}
+		$this->Security->validatePost = false;
+		$this->Security->csrfCheck = false;
 	}
 
 /**
@@ -199,6 +194,7 @@ class BlogController extends BlogAppController {
 				// BlogConfig で設定できるようにする
 				$blogContent = $this->BlogContent->find('first', ['order' => 'BlogContent.id', 'recirsive' => -1]);
 				$listCount = $blogContent['BlogContent']['feed_count'];
+				$this->blogContent = $blogContent;
 			}
 			$this->set('channel', $channel);
 			$this->layout = 'default';
@@ -212,7 +208,9 @@ class BlogController extends BlogAppController {
 		}
 
 		$datas = $this->_getBlogPosts(['num' => $listCount]);
-		$this->set('editLink', ['admin' => true, 'plugin' => 'blog', 'controller' => 'blog_contents', 'action' => 'edit', $this->blogContent['BlogContent']['id']]);
+		if (BcUtil::loginUser('admin')) {
+			$this->set('editLink', ['admin' => true, 'plugin' => 'blog', 'controller' => 'blog_contents', 'action' => 'edit', $this->blogContent['BlogContent']['id']]);
+		}
 		$this->set('posts', $datas);
 		$this->set('single', false);
 		$this->pageTitle = $this->request->params['Content']['title'];
@@ -306,8 +304,7 @@ class BlogController extends BlogAppController {
 				$data = $this->BlogPost->User->find('first', ['fields' => ['real_name_1', 'real_name_2', 'nickname'], 'conditions' => ['User.name' => $author]]);
 				App::uses('BcBaserHelper', 'View/Helper');
 				$BcBaser = new BcBaserHelper(new View());
-				$userName = $BcBaser->getUserName($data);
-				$this->pageTitle = urldecode($userName);
+				$this->pageTitle = $BcBaser->getUserName($data);
 				$template = $this->blogContent['BlogContent']['template'] . DS . 'archives';
 				$this->set('blogArchiveType', $type);
 				break;
@@ -337,12 +334,12 @@ class BlogController extends BlogAppController {
 					$this->notFound();
 				}
 				$posts = $this->_getBlogPosts(['year' => $year, 'month' => $month, 'day' => $day]);
-				$this->pageTitle = $year . '年';
-				if ($month) {
-					$this->pageTitle .= $month . '月';
-				}
 				if ($day) {
-					$this->pageTitle .= $day . '日';
+					$this->pageTitle = sprintf(__('%s年%s月%s日'), $year, $month, $day);
+				} elseif($month) {
+					$this->pageTitle = sprintf(__('%s年%s月'), $year, $month);
+				} else {
+					$this->pageTitle = sprintf(__('%s年'), $year);
 				}
 				$template = $this->blogContent['BlogContent']['template'] . DS . 'archives';
 
@@ -406,7 +403,7 @@ class BlogController extends BlogAppController {
 
 				}
 				
-				if (BcUtil::isAdminUser()) {
+				if (BcUtil::loginUser('admin')) {
 					$this->set('editLink', ['admin' => true, 'plugin' => 'blog', 'controller' => 'blog_posts', 'action' => 'edit', $post['BlogPost']['blog_content_id'], $post['BlogPost']['id']]);
 				}
 
@@ -466,21 +463,22 @@ class BlogController extends BlogAppController {
 		}
 
 		if ($this->BlogPost->BlogComment->add($this->request->data, $this->contentId, $postId, $this->blogContent['BlogContent']['comment_approve'])) {
-
+			$content = $this->BlogPost->BlogContent->Content->findByType('Blog.BlogContent', $this->blogContent['BlogContent']['id']);
+			$this->request->data['Content'] = $content['Content'];
 			$this->_sendCommentAdmin($postId, $this->request->data);
 			// コメント承認機能を利用していない場合は、公開されているコメント投稿者にアラートを送信
 			if (!$this->blogContent['BlogContent']['comment_approve']) {
 				$this->_sendCommentContributor($postId, $this->request->data);
 			}
 			if ($this->blogContent['BlogContent']['comment_approve']) {
-				$commentMessage = '送信が完了しました。送信された内容は確認後公開させて頂きます。';
+				$commentMessage = __('送信が完了しました。送信された内容は確認後公開させて頂きます。');
 			} else {
-				$commentMessage = 'コメントの送信が完了しました。';
+				$commentMessage = __('コメントの送信が完了しました。');
 			}
 			$this->request->data = null;
 		} else {
 
-			$commentMessage = 'コメントの送信に失敗しました。';
+			$commentMessage = __('コメントの送信に失敗しました。');
 		}
 		clearViewCache();
 		$this->set('commentMessage', $commentMessage);

@@ -27,7 +27,7 @@ class MailformHelper extends BcFreezeHelper {
  * 
  * @var array
  */
-	public $helpers = ['Html', 'BcTime', 'BcText', 'Js', 'BcUpload', 'BcCkeditor', 'BcBaser', 'BcContents'];
+	public $helpers = ['Html', 'BcTime', 'BcText', 'Js', 'BcUpload', 'BcCkeditor', 'BcBaser', 'BcContents', 'BcArray'];
 
 /**
  * メールフィールドのデータよりコントロールを生成する
@@ -39,8 +39,11 @@ class MailformHelper extends BcFreezeHelper {
  * @return string フォームコントロールのHTMLタグ
  */
 	public function control($type, $fieldName, $options, $attributes = array()) {
-		$attributes['escape'] = false;
+		$attributes['escape'] = true;
 		$out = '';
+		if ($this->freezed) {
+			unset($attributes['type']);
+		}
 		switch ($type) {
 
 			case 'text':
@@ -57,13 +60,18 @@ class MailformHelper extends BcFreezeHelper {
 				unset($attributes['maxlength']);
 				unset($attributes['empty']);
 				$attributes['legend'] = false;
-				$attributes['div'] = true;
 				if (!empty($attributes['separator'])) {
 					$attributes['separator'] = $attributes['separator'];
 				} else {
 					$attributes['separator'] = "&nbsp;&nbsp;";
 				}
-				$out = $this->radio($fieldName, $options, $attributes);
+				// CakePHPでは、初期値を指定していない場合に、hiddenタグを出力する仕様
+				// 初期値が設定されている、かつ、空の選択肢を選択して送信する場合に、
+				// フィールド自身が送信されないため、validatePost に引っかかってしまう
+				// hiddenタグを強制的に出すため、falseを明示的に指定
+				$attributes['hiddenField'] = false;
+				$out = $this->hidden($fieldName, array(['value' => '']));
+				$out .= $this->radio($fieldName, $options, $attributes);
 				break;
 
 			case 'select':
@@ -92,15 +100,33 @@ class MailformHelper extends BcFreezeHelper {
 				unset($attributes['maxlength']);
 				unset($attributes['separator']);
 				unset($attributes['empty']);
-				$out = $this->prefTag($fieldName, null, $attributes);
+				$out = $this->prefTag($fieldName, null, $attributes, true);
 				break;
 
 			case 'autozip':
 				unset($attributes['separator']);
 				unset($attributes['rows']);
 				unset($attributes['empty']);
-				$address1 = $this->_name(array(), $options[1]);
-				$address2 = $this->_name(array(), $options[2]);
+				$count = 0;
+				foreach($options as $option) {
+					switch ($count) {
+						case 0:
+							$address1 = $this->_name(array(), $option);
+							break;
+						case 1:
+							$address2 = $this->_name(array(), $option);
+							break;
+						default:
+							break;
+					}
+					$count++;
+				}
+				if (!isset($address1['name'])) {
+					$address1['name'] = '';
+					$address2['name'] = '';
+				} elseif (!isset($address2['name'])) {
+					$address2['name'] = $address1['name'];
+				}
 				$attributes['onKeyUp'] = "AjaxZip3.zip2addr(this,'','{$address1['name']}','{$address2['name']}')";
 				$out = $this->Html->script('admin/vendors/ajaxzip3.js') . $this->text($fieldName, $attributes);
 				break;
@@ -180,6 +206,15 @@ class MailformHelper extends BcFreezeHelper {
 				}
 				$out = $this->textarea($fieldName, $attributes);
 				break;
+
+			case 'tel':
+				unset($attributes['separator']);
+				unset($attributes['rows']);
+				unset($attributes['empty']);
+				$attributes['type'] = 'tel';
+				$out = $this->tel($fieldName, $attributes);
+				break;
+				
 			case 'hidden':
 				unset($attributes['separator']);
 				unset($attributes['rows']);
@@ -225,10 +260,64 @@ class MailformHelper extends BcFreezeHelper {
 		if(!empty($this->request->params['Site']['same_main_url'])) {
 			$url = $this->BcContents->getPureUrl($url, $this->request->params['Site']['id']);
 		}
-		$output = $this->BcBaser->getImg($url . '/captcha/' . $captchaId, array('alt' => '認証画像', 'class' => $options['class']));
+		$output = $this->BcBaser->getImg($url . '/captcha/' . $captchaId, array('alt' => __('認証画像'), 'class' => $options['class']));
 		$output .= $options['separate'] . $this->text($fieldName);
 		$output .= $this->input('MailMessage.captcha_id', ['type' => 'hidden', 'value' => $captchaId]);
 		echo $output;
 	}
 
+/**
+ * 指定したgroup_validをもつフィールドのエラーを取得する
+ *
+ * @param array $mailFields
+ * @param string $groupValid
+ * @param array $options
+ * @param bool $distinct 同じエラーメッセージをまとめる
+ * @return array
+ */
+	public function getGroupValidErrors($mailFields, $groupValid, $options = [], $distinct = true) {
+		$errors = [];
+		foreach ($mailFields as $mailField) {
+			if ($mailField['MailField']['group_valid'] !== $groupValid || !in_array('VALID_GROUP_COMPLATE', explode(',', $mailField['MailField']['valid_ex']))) {
+				continue;
+			}
+			if(!empty($this->validationErrors['MailMessage'][$mailField['MailField']['field_name']])) {
+				foreach($this->validationErrors['MailMessage'][$mailField['MailField']['field_name']] as $key => $error) {
+					if($error === true) {
+						unset($this->validationErrors['MailMessage'][$mailField['MailField']['field_name']][$key]);
+					}
+				}
+			}
+			$errorMessage = $this->error("MailMessage." . $mailField['MailField']['field_name'], null, $options);
+			if ($errorMessage && (!$distinct || !array_search($errorMessage, $errors))) {
+				$errors[$mailField['MailField']['field_name']] = $errorMessage;
+			}
+		}
+		return $errors;
+	}
+
+/**
+ * メールフィールドのグループの最後か判定する
+ * @param array $mailFields
+ * @param array $currentMailField
+ * @return bool
+ */
+	public function isGroupLastField($mailFields, $currentMailField) {
+		if (empty($currentMailField['group_field'])) {
+			return false;
+		}
+		if (isset($currentMailField['MailField'])) {
+			$currentMailField = $currentMailField['MailField'];
+		}
+		foreach($mailFields as $key => $mailField) {
+			if ($currentMailField === $mailField['MailField']) {
+				break;
+			}
+		}
+		if(empty($mailFields[$key + 1]['MailField']['group_field']) ||
+			$currentMailField['group_field'] !== $mailFields[$key + 1]['MailField']['group_field']) {
+			return true;
+		}
+		return false;
+	}
 }

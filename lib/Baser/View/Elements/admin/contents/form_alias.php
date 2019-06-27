@@ -18,7 +18,7 @@ if((!empty($this->BcContents->settings[$srcContent['type']]))) {
 		'parent_id' => $srcContent['parent_id']
 	]);
 } else {
-	$title = '無所属コンテンツ';
+	$title = __d('baser', '無所属コンテンツ');
 	$editLink = '/' . BcUtil::getAdminPrefix() . '/contents/edit';
 	if($srcContent['entity_id']) {
 		$editLink .= '/' . $srcContent['entity_id'];
@@ -31,12 +31,12 @@ if((!empty($this->BcContents->settings[$srcContent['type']]))) {
 
 <table class="form-table">
     <tr>
-        <th><?php echo $this->BcForm->label('Content.alias_id', '元コンテンツ') ?></th>
+        <th><?php echo $this->BcForm->label('Content.alias_id', __d('baser', '元コンテンツ')) ?></th>
         <td>
-            <?php echo $this->BcForm->input('Content.alias_id', array('type' => 'hidden')) ?>
+            <?php echo $this->BcForm->input('Content.alias_id', ['type' => 'hidden']) ?>
             <small>[<?php echo $title ?>]</small>&nbsp;
            &nbsp;
-           <?php $this->BcBaser->link($srcContent['title'], $editLink, array('target' => '_blank')) ?>
+           <?php $this->BcBaser->link($srcContent['title'], $editLink, ['target' => '_blank']) ?>
 			<?php if($related): ?>
 			<p>このコンテンツはメインサイトの連携エイリアスです。<br>フォルダ、レイアウトテンプレート以外を編集する場合は上記リンクをクリックしてメインサイトのコンテンツを編集してください。</p>
 			<?php endif ?>

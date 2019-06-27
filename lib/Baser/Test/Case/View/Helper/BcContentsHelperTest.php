@@ -176,11 +176,9 @@ class BcContentsHelperTest extends BaserTestCase {
 		return [
 			// 管理ユーザー
 			['Default', 'admin_index', 1, 1, false], // 存在しないアクション
-			['ContentFolder', 'icon', 1, 1, true], // 存在するアクション
 			['ContentFolder', 'add', 1, 1, true], // 存在するアクション
 			['ContentFolder', 'edit', 1, 1, true], // 存在するアクション
 			['ContentFolder', 'delete', 1, 1, true], // 存在するアクション
-			['ContentAlias', 'icon', 1, 1, true], // 存在するアクション
 			['BlogContent', 'manage', 1, 1, true], // 存在するアクション
 			['MailContent', 'manage', 1, 1, true], // 存在するアクション
 			['Page', 'copy', 1, 1, true], // 存在するアクション
@@ -201,31 +199,28 @@ class BcContentsHelperTest extends BaserTestCase {
  * コンテンツIDよりURLを取得する
  * getUrlById
  *
- * 
- */
 	public function testGetUrlById() {
 		$this->markTestIncomplete('このメソッドは、モデルをラッピングしているメソッドの為スキップします。');
 	}
+ */
 
 /**
  * フルURLを取得する
  * getUrl
  *
- * 
- */
 	public function testGetUrl() {
 		$this->markTestIncomplete('このメソッドは、モデルをラッピングしているメソッドの為スキップします。');
 	}
+ */
 
 /**
  * プレフィックスなしのURLを取得する
  * getPureUrl
  *
- * 
- */
 	public function testGetPureUrl() {
 		$this->markTestIncomplete('このメソッドは、モデルをラッピングしているメソッドの為スキップします。');
 	}
+ */
 
 /**
  * 現在のURLを元に指定したサブサイトのURLを取得する
@@ -266,7 +261,10 @@ class BcContentsHelperTest extends BaserTestCase {
 		$this->BcContents->request = $this->_getRequest('/');
 		$_SERVER['HTTP_USER_AGENT'] = 'iPhone';
 		$result = $this->BcContents->getRelatedSiteContents($id, $options);
-		$this->assertEquals($expect, $result[1]['Content']['id']);                       
+		if(!empty($result[1]['Content']['id'])) {
+			$result = $result[1]['Content']['id'];
+		}
+		$this->assertEquals($expect, $result);                       
 	}
 	public function getRelatedSiteContentsDataProvider() {
 		return [
@@ -279,8 +277,8 @@ class BcContentsHelperTest extends BaserTestCase {
 			['', ['excludeIds' => [2]], 9],
 			['', ['excludeIds' => [99]], 9],
 			// コンテンツIDに値が入っていれば、false
-			['1', ['excludeIds' => [1]], false],
-			['hoge', [], false],
+			[1, ['excludeIds' => []], 2],
+			[99, [], []],
 		];
 	}
 
@@ -311,8 +309,8 @@ class BcContentsHelperTest extends BaserTestCase {
 			[0, ['excludeIds' => [3]], [['prefix' => '','name' => 'パソコン', 'url'=>'/index'],['prefix' => 'mobile','name' => 'ケータイ', 'url'=>'/m/index'],['prefix' => 'smartphone','name' => 'スマートフォン', 'url'=>'/s/index']]],
 			[0, ['excludeIds' => [99]], [['prefix' => '','name' => 'パソコン', 'url'=>'/index'],['prefix' => 'mobile','name' => 'ケータイ', 'url'=>'/m/index'],['prefix' => 'smartphone','name' => 'スマートフォン', 'url'=>'/s/index']]],
 			// IDに値が入っていれば、false
-			[1, ['excludeIds' => [0]], []],
-			['hoge', [], []],
+			[1, ['excludeIds' => [0]], [['prefix' => 'mobile','name' => 'ケータイ', 'url'=>'/m/'],['prefix' => 'smartphone','name' => 'スマートフォン', 'url'=>'/s/']]],
+			[99, [], []],
 		];
 	}	
 
@@ -363,11 +361,10 @@ class BcContentsHelperTest extends BaserTestCase {
 /**
  * データが公開状態にあるか確認する
  *
- */
 	public function testIsAllowPublish() {
 		$this->markTestIncomplete('このメソッドは、モデルをラッピングしているメソッドの為スキップします。');
 	}
-
+ */
 
 /**
  * 親フォルダを取得する
@@ -411,21 +408,20 @@ class BcContentsHelperTest extends BaserTestCase {
 	
 /**
  * フォルダリストを取得する
- * 
- */	
+ *
 	public function testGetContentFolderList() {
 		$this->markTestIncomplete('このメソッドは、モデルをラッピングしているメソッドの為スキップします。');
 	}
-
+ */
 
 /**
  * サイトIDからサイトルートとなるコンテンツを取得する
- * 
- */	
+ *
 	public function testGetSiteRoot() {
 		$this->markTestIncomplete('このメソッドは、モデルをラッピングしているメソッドの為スキップします。');
 	}
-	
+ */
+
 /**
  * サイトIDからコンテンツIDを取得する
  * getSiteRootId

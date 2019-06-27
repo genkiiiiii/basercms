@@ -12,7 +12,13 @@
 
 /**
  * サブサイト新規登録
+ * @var BcAppView $this
  */
+$this->BcBaser->i18nScript([
+	'confirmMessage1' => __d('baser', "サブサイトを削除してもよろしいですか？\nサブサイトに関連しているコンテンツは全てゴミ箱に入ります。"),
+	'confirmMessage2' => __d('baser', 'エイリアスを本当に変更してもいいですか？<br><br>エイリアスを変更する場合、サイト全体のURLが変更となる為、保存に時間がかかりますのでご注意ください。'),
+	'confirmTitle1' => __d('baser', 'エイリアス変更') 
+]);
 $this->BcBaser->js('admin/sites/edit', false);
 ?>
 
@@ -26,8 +32,8 @@ $this->BcBaser->js('admin/sites/edit', false);
 <?php echo $this->BcFormTable->dispatchAfter() ?>
 
 <div class="submit">
-	<?php echo $this->BcHtml->link('一覧に戻る', array('plugin' => '', 'admin' => true, 'controller' => 'sites', 'action' => 'index'), array('class' => 'button')) ?>
-	<?php echo $this->BcForm->submit('保存', array('div' => false, 'class' => 'button', 'id' => 'BtnSave')) ?>
+	<?php echo $this->BcHtml->link(__d('baser', '一覧に戻る'), ['plugin' => '', 'admin' => true, 'controller' => 'sites', 'action' => 'index'], ['class' => 'button']) ?>
+	<?php echo $this->BcForm->submit(__d('baser', '保存'), ['div' => false, 'class' => 'button', 'id' => 'BtnSave']) ?>
 </div>
 
 <?php echo $this->BcForm->end() ?>

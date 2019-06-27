@@ -16,8 +16,15 @@
  */
 $url = $this->request->params['Content']['url'] . 'archives/' . $this->BcForm->value('BlogPost.no');
 $fullUrl = $this->BcBaser->getContentsUrl($url, true, $this->request->params['Site']['use_subdomain']);
-$statuses = [0 => '非公開', 1 => '公開'];
+$statuses = [0 => __d('baser', '非公開'), 1 => __d('baser', '公開')];
 $this->BcBaser->css('admin/ckeditor/editor', ['inline' => true]);
+$this->BcBaser->i18nScript([
+    'alertMessage1' => __d('baser', 'タグの追加に失敗しました。既に登録されていないか確認してください。'),
+    'alertMessage2' => __d('baser', 'タグの追加に失敗しました。'),
+    'alertMessage3' => __d('baser', 'カテゴリの追加に失敗しました。入力したカテゴリ名が既に登録されていないか確認してください。'),
+    'alertMessage4' => __d('baser', 'カテゴリの追加に失敗しました。'),
+    'alertMessage5' => __d('baser', 'カテゴリの追加に失敗しました。')
+]);
 $this->BcBaser->js('Blog.admin/blog_posts/form', false, [
     'id' => 'AdminBlogBLogPostsEditScript',
 	'data-fullurl' => $fullUrl,
@@ -62,17 +69,17 @@ $this->BcBaser->js('Blog.admin/blog_posts/form', false, [
 			<th class="col-head" style="width:53px"><?php echo $this->BcForm->label('BlogPost.url', 'URL') ?></th>
 			<td class="col-input">
 				<span class="url"><?php echo urldecode($this->BcBaser->getUri($fullUrl)) ?></span>　
-				<?php echo $this->BcForm->button('URLコピー', ['class' => 'small-button', 'style' => 'font-weght:normal', 'id' => 'BtnCopyUrl']) ?>
+				<?php echo $this->BcForm->button(__d('baser', 'URLコピー'), ['class' => 'small-button', 'style' => 'font-weght:normal', 'id' => 'BtnCopyUrl']) ?>
 			</td>
 		</tr>
 	<?php endif; ?>
 	<?php if ($categories): ?>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.blog_category_id', 'カテゴリー') ?></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.blog_category_id', __d('baser', 'カテゴリー')) ?></th>
 			<td class="col-input">
 				<?php echo $this->BcForm->input('BlogPost.blog_category_id', ['type' => 'select', 'options' => $categories, 'escape' => true]) ?>&nbsp;
 				<?php if($hasNewCategoryAddablePermission): ?>
-					<?php echo $this->BcForm->button('新しいカテゴリを追加', ['id' => 'BtnAddBlogCategory']) ?>
+					<?php echo $this->BcForm->button(__d('baser', '新しいカテゴリを追加'), ['id' => 'BtnAddBlogCategory']) ?>
 				<?php endif ?>
 				<?php $this->BcBaser->img('admin/ajax-loader-s.gif', ['style' => 'vertical-align:middle;display:none', 'id' => 'BlogCategoryLoader', 'class' => 'loader']) ?>
 				<?php echo $this->BcForm->error('BlogPost.blog_category_id') ?>
@@ -80,22 +87,22 @@ $this->BcBaser->js('Blog.admin/blog_posts/form', false, [
 		</tr>
 	<?php endif ?>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.name', 'タイトル') ?>&nbsp;<span class="required">*</span></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.name', __d('baser', 'タイトル')) ?>&nbsp;<span class="required">*</span></th>
 			<td class="col-input">
 				<?php echo $this->BcForm->input('BlogPost.name', ['type' => 'text', 'size' => 40, 'maxlength' => 255, 'autofocus' => true, 'counter' => true]) ?>
 				<?php echo $this->BcForm->error('BlogPost.name') ?>
 			</td>
 		</tr>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.eye_catch', 'アイキャッチ画像') ?></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.eye_catch', __d('baser', 'アイキャッチ画像')) ?></th>
 			<td class="col-input">
-				<?php echo $this->BcForm->file('BlogPost.eye_catch', ['imgsize' => 'thumb', 'width' => '300']) ?>
+				<?php echo $this->BcForm->input('BlogPost.eye_catch', ['type' => 'file', 'imgsize' => 'thumb', 'width' => '300']) ?>
 				<?php echo $this->BcForm->error('BlogPost.eye_catch') ?>
 			</td>
 		</tr>
 	<?php if (!empty($blogContent['BlogContent']['use_content'])): ?>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.content', '概要') ?></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.content', __d('baser', '概要')) ?></th>
 			<td class="col-input">
 				<?php echo $this->BcForm->ckeditor('BlogPost.content', [
 					'editorWidth' => 'auto',
@@ -129,34 +136,48 @@ $this->BcBaser->js('Blog.admin/blog_posts/form', false, [
 	<table cellpadding="0" cellspacing="0" class="form-table">
 		<?php if (!empty($blogContent['BlogContent']['tag_use'])): ?>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogTag.BlogTag', 'タグ') ?></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogTag.BlogTag', __d('baser', 'タグ')) ?></th>
 			<td class="col-input">
 				<div class="clearfix" id="BlogTags" style="padding:5px">
 					<?php echo $this->BcForm->input('BlogTag.BlogTag', ['type' => 'select', 'multiple' => 'checkbox', 'options' => $this->BcForm->getControlSource('BlogPost.blog_tag_id')]); ?>
 				</div>
 				<?php echo $this->BcForm->error('BlogTag.BlogTag') ?>
-				<?php echo $this->BcForm->input('BlogTag.name', ['type' => 'text']) ?>
-				<?php echo $this->BcForm->button('新しいタグを追加', ['id' => 'BtnAddBlogTag']) ?>
-				<?php $this->BcBaser->img('admin/ajax-loader-s.gif', ['style' => 'vertical-align:middle;display:none', 'id' => 'TagLoader', 'class' => 'loader']) ?>
+				<?php if($hasNewTagAddablePermission): ?>
+					<?php echo $this->BcForm->input('BlogTag.name', ['type' => 'text']) ?>
+					<?php echo $this->BcForm->button(__d('baser', '新しいタグを追加'), ['id' => 'BtnAddBlogTag']) ?>
+					<?php $this->BcBaser->img('admin/ajax-loader-s.gif', ['style' => 'vertical-align:middle;display:none', 'id' => 'TagLoader', 'class' => 'loader']) ?>
+				<?php endif; ?>
 			</td>
 		</tr>
 		<?php endif ?>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.status', '公開状態') ?></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.status', __d('baser', '公開状態')) ?></th>
 			<td class="col-input">
 				<?php echo $this->BcForm->input('BlogPost.status', ['type' => 'radio', 'options' => $statuses]) ?>
 				<?php echo $this->BcForm->error('BlogPost.status') ?>
                 &nbsp;&nbsp;&nbsp;&nbsp;<small>[公開期間]</small>&nbsp;
-				<?php echo $this->BcForm->dateTimePicker('BlogPost.publish_begin', ['size' => 12, 'maxlength' => 10], true) ?>
+				<?php echo $this->BcForm->input('BlogPost.publish_begin', [
+				        'type' => 'dateTimePicker', 
+                        'size' => 12, 
+                        'maxlength' => 10,
+						'dateLabel' => ['text' => '開始日付'],
+						'timeLabel' => ['text' => '開始時間']
+                ]) ?>
 				&nbsp;〜&nbsp;
-				<?php echo $this->BcForm->dateTimePicker('BlogPost.publish_end', ['size' => 12, 'maxlength' => 10], true) ?><br />
-				<?php echo $this->BcForm->input('BlogPost.exclude_search', ['type' => 'checkbox', 'label' => 'サイト内検索の検索結果より除外する']) ?>
+				<?php echo $this->BcForm->input('BlogPost.publish_end', [
+				        'type' => 'dateTimePicker', 
+                        'size' => 12, 
+                        'maxlength' => 10,
+						'dateLabel' => ['text' => '終了日付'],
+						'timeLabel' => ['text' => '終了時間']
+                ]) ?><br />
+				<?php echo $this->BcForm->input('BlogPost.exclude_search', ['type' => 'checkbox', 'label' => __d('baser', 'サイト内検索の検索結果より除外する')]) ?>
 				<?php echo $this->BcForm->error('BlogPost.publish_begin') ?>
 				<?php echo $this->BcForm->error('BlogPost.publish_end') ?>
 			</td>
 		</tr>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.user_id', '作成者') ?>&nbsp;<span class="required">*</span></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.user_id', __d('baser', '作成者')) ?>&nbsp;<span class="required">*</span></th>
 			<td class="col-input">
 				<?php if (isset($user) && $user['user_group_id'] == Configure::read('BcApp.adminGroupId')): ?>
 					<?php echo $this->BcForm->input('BlogPost.user_id', [
@@ -173,9 +194,9 @@ $this->BcBaser->js('Blog.admin/blog_posts/form', false, [
 			</td>
 		</tr>
 		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.posts_date', '投稿日') ?>&nbsp;<span class="required">*</span></th>
+			<th class="col-head"><?php echo $this->BcForm->label('BlogPost.posts_date', __d('baser', '投稿日')) ?>&nbsp;<span class="required">*</span></th>
 			<td class="col-input">
-				<?php echo $this->BcForm->dateTimePicker('BlogPost.posts_date', ['size' => 12, 'maxlength' => 10], true) ?>
+				<?php echo $this->BcForm->input('BlogPost.posts_date', ['type' => 'dateTimePicker', 'size' => 12, 'maxlength' => 10]) ?>
 				<?php echo $this->BcForm->error('BlogPost.posts_date') ?>
 			</td>
 		</tr>
@@ -188,43 +209,34 @@ $this->BcBaser->js('Blog.admin/blog_posts/form', false, [
 <!-- button -->
 <div class="submit">
 	<?php if ($this->action == 'admin_add'): ?>
-		<?php echo $this->BcForm->button('プレビュー', ['div' => false, 'class' => 'button', 'id' => 'BtnPreview']) ?>
-		<?php echo $this->BcForm->submit('保存', ['div' => false, 'class' => 'button', 'id' => 'BtnSave']) ?>
+		<?php echo $this->BcForm->button(__d('baser', 'プレビュー'), ['div' => false, 'class' => 'button', 'id' => 'BtnPreview']) ?>
+		<?php echo $this->BcForm->submit(__d('baser', '保存'), ['div' => false, 'class' => 'button', 'id' => 'BtnSave']) ?>
 	<?php elseif ($this->action == 'admin_edit'): ?>
-		<?php echo $this->BcForm->button('プレビュー', ['div' => false, 'class' => 'button', 'id' => 'BtnPreview']) ?>
-		<?php echo $this->BcForm->submit('保存', ['div' => false, 'class' => 'button', 'id' => 'BtnSave']) ?>
-		<?php $this->BcBaser->link('削除', ['action' => 'delete', $blogContent['BlogContent']['id'], $this->BcForm->value('BlogPost.id')], ['class' => 'submit-token button', 'id' => 'BtnDelete'], sprintf('%s を本当に削除してもいいですか？\n※ ブログ記事はゴミ箱に入らず完全に消去されます。', $this->BcForm->value('BlogPost.name')), false); ?>
+		<?php echo $this->BcForm->button(__d('baser', 'プレビュー'), ['div' => false, 'class' => 'button', 'id' => 'BtnPreview']) ?>
+		<?php echo $this->BcForm->submit(__d('baser', '保存'), ['div' => false, 'class' => 'button', 'id' => 'BtnSave']) ?>
+		<?php $this->BcBaser->link(__d('baser', '削除'), ['action' => 'delete', $blogContent['BlogContent']['id'], $this->BcForm->value('BlogPost.id')], ['class' => 'submit-token button', 'id' => 'BtnDelete'], sprintf(__d('baser', "%s を本当に削除してもいいですか？\n※ ブログ記事はゴミ箱に入らず完全に消去されます。"), $this->BcForm->value('BlogPost.name'))); ?>
 	<?php endif ?>
 </div>
 
 <?php echo $this->BcForm->end() ?>
 
-<div id="AddBlogCategoryForm" style="display:none">
-	<h3>新しいブログカテゴリを入力してください。</h3>
-	<table>
-		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogCategory.title', 'カテゴリタイトル') ?>&nbsp;<span class="required">*</span></th>
-			<td class="col-input">
-				<?php echo $this->BcForm->input('BlogCategory.title', ['type' => 'text', 'size' => 40, 'maxlength' => 255]) ?>
-			</td>
-		</tr>
-		<tr>
-			<th class="col-head"><?php echo $this->BcForm->label('BlogCategory.name', 'カテゴリ名') ?>&nbsp</th>
-			<td class="col-input">
-				<?php echo $this->BcForm->input('BlogCategory.name', ['type' => 'text', 'size' => 40, 'maxlength' => 255, 'autofocus' => true]) ?>
-				<?php echo $this->BcHtml->image('admin/icn_help.png', ['id' => 'helpName', 'class' => 'btn help', 'alt' => 'ヘルプ']) ?>
-				<div id="helptextName" class="helptext">
-					<ul>
-						<li>URLに利用されます</li>
-						<li>半角のみで入力してください</li>
-						<li>空の場合はカテゴリタイトルから値が自動で設定されます</li>
-					</ul>
-				</div>
-			</td>
-		</tr>
-	</table>
-	<div class="submit">
-		<?php echo $this->BcForm->submit('保存', ['div' => false, 'class' => 'button', 'id' => 'BtnBlogCategorySave']) ?>
-		<?php echo $this->BcForm->button('キャンセル', ['div' => false, 'class' => 'button', 'id' => 'BtnBlogCategoryCancel']) ?>
-	</div>
+<div id="AddBlogCategoryForm" title="<?php echo __d('baser', 'カテゴリ新規追加') ?>" style="display:none">
+	<dl>
+		<dt><?php echo $this->BcForm->label('BlogCategory.title', __d('baser', 'カテゴリタイトル')) ?></dt>
+		<dd>
+			<?php echo $this->BcForm->input('BlogCategory.title', ['type' => 'text', 'size' => 40, 'maxlength' => 255, 'value' => '', 'autofocus' => true]) ?>
+		</dd>
+		<dt><?php echo $this->BcForm->label('BlogCategory.name', __d('baser', 'カテゴリ名')) ?></dt>
+		<dd>
+			<?php echo $this->BcForm->input('BlogCategory.name', ['type' => 'text', 'size' => 40, 'maxlength' => 255, 'value' => '']) ?>
+			<?php echo $this->BcHtml->image('admin/icn_help.png', ['id' => 'helpName', 'class' => 'btn help', 'alt' => __d('baser', 'ヘルプ')]) ?>
+			<div id="helptextName" class="helptext">
+				<ul>
+					<li><?php echo __d('baser', 'URLに利用されます')?></li>
+					<li><?php echo __d('baser', '半角のみで入力してください')?></li>
+					<li><?php echo __d('baser', '空の場合はカテゴリタイトルから値が自動で設定されます')?></li>
+				</ul>
+			</div>
+		</dd>
+	</dl>
 </div>

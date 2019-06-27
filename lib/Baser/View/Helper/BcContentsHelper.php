@@ -40,7 +40,7 @@ class BcContentsHelper extends AppHelper {
  * @return	void
  * @access	public
  */
-	public function __construct(View $View, $settings = array()) {
+	public function __construct(View $View, $settings = []) {
 		parent::__construct($View, $settings);
 		$this->_Content = ClassRegistry::init('Content');
 		$this->_Permission = ClassRegistry::init('Permission');
@@ -88,10 +88,18 @@ class BcContentsHelper extends AppHelper {
 
 			// icon
 			if (!empty($setting['icon'])) {
-				$setting['url']['icon'] = $this->_getIconUrl($setting['plugin'], $setting['type'], $setting['icon']);
+				if(preg_match('/\.(png|jpg|gif)$/', $setting['icon'])) {
+					$setting['url']['icon'] = $this->_getIconUrl($setting['plugin'], $setting['type'], $setting['icon']);	
+				}
 			} else {
-				$setting['url']['icon'] = $this->_getIconUrl($setting['plugin'], $setting['type'], null);
+				// 後方互換のため判定を入れる（v4.2.0）
+				if(Configure::read('BcSite.admin_theme') === array_keys(Configure::read('BcApp.adminNewThemeName'))[0]) {
+					$setting['icon'] = $setting['icon'] = 'bca-icon--file';
+				} else {
+					$setting['url']['icon'] = $this->_getIconUrl($setting['plugin'], $setting['type'], null);
+				}
 			}
+			
 			// routes
 			foreach (['manage', 'add', 'edit', 'delete', 'copy', 'dblclick'] as $method) {
 				if (empty($setting['routes'][$method]) && !in_array($method, ['copy', 'manage', 'dblclick'])) {
@@ -145,7 +153,7 @@ class BcContentsHelper extends AppHelper {
 			}
 		}
 		$this->_Content->Behaviors->unload('SoftDelete');
-		$contents = $this->_Content->find('all', array('fields' => array('plugin', 'type', 'title'), 'conditions' => $conditions, 'recursive' => -1));
+		$contents = $this->_Content->find('all', ['fields' => ['plugin', 'type', 'title'], 'conditions' => $conditions, 'recursive' => -1]);
 		$this->_Content->Behaviors->load('SoftDelete');
 		$existContents = [];
 		foreach($contents as $content) {
@@ -181,7 +189,7 @@ class BcContentsHelper extends AppHelper {
 				try {
 					$pluginPath = CakePlugin::path($plugin) . 'webroot' . DS;
 				}catch(Exception $e) {
-					throw new ConfigureException('プラグインの BcContent 設定が間違っています。');
+					throw new ConfigureException(__d('baser', 'プラグインの BcContent 設定が間違っています。'));
 				}
 				$iconPath = $pluginPath . str_replace('/', DS, $imageBaseUrl) . $icon;
 				if(file_exists($iconPath)) {
@@ -191,7 +199,7 @@ class BcContentsHelper extends AppHelper {
 				}
 			}
 		}
-		return $this->assetUrl($file, array('pathPrefix' => $imageBaseUrl));
+		return $this->assetUrl($file, ['pathPrefix' => $imageBaseUrl]);
 	}
 
 /**
@@ -232,7 +240,7 @@ class BcContentsHelper extends AppHelper {
  * @param bool $base $full が false の場合、ベースとなるURLを含めるかどうか
  * @return string URL
  */
-	public function getUrl($url, $full = false, $useSubDomain = false, $base = false) {
+	public function getUrl($url, $full = false, $useSubDomain = false, $base = true) {
 		return $this->_Content->getUrl($url, $full, $useSubDomain, $base);
 	}
 
@@ -383,15 +391,17 @@ class BcContentsHelper extends AppHelper {
 			'excludeIds' => []
 		], $options);
 		$this->_Content->unbindModel(['belongsTo' => ['User']]);
-		if(!$id && !empty($this->request->params['Content'])) {
-			$content = $this->request->params['Content'];
-			if($content['main_site_content_id']) {
-				$id = $content['main_site_content_id'];
+		if(!$id) {
+			if(!empty($this->request->params['Content'])) {
+				$content = $this->request->params['Content'];
+				if ($content['main_site_content_id']) {
+					$id = $content['main_site_content_id'];
+				} else {
+					$id = $content['id'];
+				}
 			} else {
-				$id = $content['id'];
-			}
-		} else {
-			return false;
+				return false;	
+			}	
 		}
 		return $this->_Content->getRelatedSiteContents($id, $options);
 	}
@@ -427,7 +437,7 @@ class BcContentsHelper extends AppHelper {
  * @param array $options
  * @return array|bool
  */
-	public function getContentFolderList($siteId = null, $options = array()) {
+	public function getContentFolderList($siteId = null, $options = []) {
 		return $this->_Content->getContentFolderList($siteId, $options);
 	}
 	
@@ -507,11 +517,11 @@ class BcContentsHelper extends AppHelper {
  * @param string $field 取得したい値
  *  'name','url','title'など　初期値：Null 
  *  省略した場合配列を取得
- * @return array or string or bool
+ * @return array|string|bool
  */
 	public function getContentByEntityId($id, $contentType, $field = null){
 		$conditions = array_merge($this->_Content->getConditionAllowPublish(), ['type' => $contentType, 'entity_id' => $id]);
-		$content = $this->_Content->find('first', ['conditions' => $conditions, 'cache' => false]);
+		$content = $this->_Content->find('first', ['conditions' => $conditions, 'order' => ['Content.id'], 'cache' => false]);
 		if(!empty($content)){
 			if($field){
 				return $content ['Content'][$field];
@@ -526,8 +536,8 @@ class BcContentsHelper extends AppHelper {
 /**
  * IDがコンテンツ自身の親のIDかを判定する
  *
- * @param $id コンテンツ自身のID
- * @param $parentId 親として判定するID
+ * @param int $id コンテンツ自身のID
+ * @param int $parentId 親として判定するID
  * @return bool
  */
 	public function isParentId($id, $parentId) {
@@ -541,6 +551,59 @@ class BcContentsHelper extends AppHelper {
 		} else {
 			return false;
 		}
+	}
+
+/**
+ * 現在のコンテンツが属するフォルダまでのフルパスを取得する
+ * フォルダ名称部分にはフォルダ編集画面へのリンクを付与する
+ * コンテンツ編集画面で利用
+ *
+ * @return string
+ */
+	public function getCurrentFolderLinkedUrl() {
+		return $this->getFolderLinkedUrl($this->request->data);
+	}
+
+/**
+ * 対象コンテンツが属するフォルダまでのフルパスを取得する
+ * フォルダ名称部分にはフォルダ編集画面へのリンクを付与する
+ * コンテンツ編集画面で利用
+ *
+ * @param array $content コンテンツデータ
+ * @return string
+ */
+	public function getFolderLinkedUrl($content) {
+		$urlArray = explode('/', preg_replace('/(^\/|\/$)/', '', $content['Content']['url']));
+		unset($urlArray[count($urlArray) -1]);
+		if($content['Site']['same_main_url']) {
+			$site = BcSite::findById($content['Site']['main_site_id']);
+			array_shift($urlArray);
+			if($site->alias) {
+				$urlArray = explode('/', $site->alias) + $urlArray;
+			}
+		}
+		if($content['Site']['use_subdomain']) {
+			$host = $this->getUrl('/' . $urlArray[0] . '/', true, $content['Site']['use_subdomain']);
+			array_shift($urlArray);
+		} else {
+			$host = $this->getUrl('/', true, $content['Site']['use_subdomain']);
+		}
+		if($content['Site']['alias']) {
+			$checkUrl = '/' . $content['Site']['alias'] . '/';
+		} else {
+			$checkUrl = '/';
+		}
+		$Content = ClassRegistry::init('Content');
+		foreach($urlArray as $key => $value) {
+			$checkUrl .= $value . '/';
+			$entityId = $Content->field('entity_id', ['Content.url' => $checkUrl]);
+			$urlArray[$key] = $this->BcBaser->getLink(urldecode($value), ['admin' => true, 'plugin' => '', 'controller' => 'content_folders', 'action' => 'edit', $entityId], ['forceTitle' => true]);
+		}
+		$folderLinkedUrl = $host;
+		if($urlArray) {
+			$folderLinkedUrl .= implode('/', $urlArray) . '/';
+		}
+		return $folderLinkedUrl;
 	}
 
 }

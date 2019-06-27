@@ -149,6 +149,11 @@ App::uses('BcPluginAppModel', 'Model');
 // <<<
 
 /**
+ * 言語設定
+ */
+Configure::write('Config.language', BcLang::parseLang(@$_SERVER['HTTP_ACCEPT_LANGUAGE']));
+
+/**
  * 設定ファイル読み込み
  * install.php で設定している為、一旦読み込んで再設定
  */
@@ -282,10 +287,11 @@ if (BC_INSTALLED) {
 		$isUpdater = true;
 	} elseif (BC_INSTALLED && !$isMaintenance && (!empty($bcSite['version']) && (getVersion() > $bcSite['version']))) {
 		if(!isConsole()) {
+			CakeLog::write(LOG_ERR, 'プログラムとデータベースのバージョンが異なります。');
 			header('Location: ' . topLevelUrl(false) . baseUrl() . 'maintenance/index');
 			exit();
 		} else {
-			throw new BcException(__d('cake_dev', 'Since the version of the program and the database are different, it forcibly terminates. Adjust the version of the database and try again.'));
+			throw new BcException(__d('baser', 'プログラムとデータベースのバージョンが異なるため、強制終了します。データベースのバージョンを調整して、再実行してください。'));
 		}
 	}
 	Configure::write('BcRequest.isUpdater', $isUpdater);
@@ -294,10 +300,18 @@ if (BC_INSTALLED) {
  * プラグインをCake側で有効化
  * 
  * カレントテーマのプラグインも読み込む
+ * サブサイトに適用されているプラグインも読み込む
  */
 
 if (BC_INSTALLED && !$isUpdater && !$isMaintenance) {
-	App::build(array('Plugin' => array(BASER_THEMES . $bcSite['theme'] . DS . 'Plugin' . DS)), App::PREPEND);
+	$sites = BcSite::findAll();
+	$pluginPaths = [ROOT . DS . 'Plugin' . DS];
+	foreach($sites as $site) {
+		if($site->theme) {
+			$pluginPaths[] = BASER_THEMES . $site->theme . DS . 'Plugin' . DS;
+		}
+	}
+	App::build(['Plugin' => $pluginPaths], App::PREPEND);
 	$plugins = getEnablePlugins();
 	foreach ($plugins as $plugin) {
 		loadPlugin($plugin['Plugin']['name'], $plugin['Plugin']['priority']);
@@ -324,7 +338,7 @@ if (BC_INSTALLED && !$isUpdater && !$isMaintenance) {
 /**
  * テーマの bootstrap を実行する
  */
- 	if(!BcUtil::isAdminSystem()) {
+ 	if(!BcUtil::isAdminSystem($parameter)) {
 		$themePath = WWW_ROOT . 'theme' . DS . Configure::read('BcSite.theme') . DS;
 		$themeBootstrap = $themePath . 'Config' . DS . 'bootstrap.php';
 		if (file_exists($themeBootstrap)) {
@@ -353,12 +367,11 @@ if ($memoryLimit < 32 && $memoryLimit != -1) {
 setlocale(LC_ALL, 'ja_JP.UTF-8');
 
 /**
- * セッションスタート 
+ * セッションスタート
  */
-if (!isConsole()) {
-	$Session = new CakeSession();
-	$Session->start();
-}
+$Session = new CakeSession();
+$Session->start();
+
 
 /**
  * Viewのキャッシュ設定・ログの設定
@@ -394,4 +407,17 @@ if (BC_INSTALLED || isConsole()) {
 	App::build(array(
 		'View/Helper' => array(BASER_THEMES . Configure::read('BcSite.theme') . DS . 'Helper' . DS)
 	), App::PREPEND);
+}
+
+/**
+ * 後方互換のため過去テーマ用のアイコンを設定
+ * @deprecated 5.0.0 since 4.2.0 過去テーマを廃止予定
+ */
+if(Configure::read('BcSite.admin_theme') === '') {
+	Configure::write('BcContents.items.Core.ContentFolder.icon', 'admin/icon_folder.png');
+	Configure::write('BcContents.items.Core.ContentAlias.icon', 'admin/icon_alias.png');
+	Configure::write('BcContents.items.Core.ContentLink.icon', 'admin/icon_link.png');
+	Configure::write('BcContents.items.Core.Page.icon', 'admin/icon_page.png');
+	Configure::write('BcContents.items.Blog.BlogContent.icon', 'admin/icon_blog.png');
+	Configure::write('BcContents.items.Mail.MailContent.icon', 'admin/icon_mail.png');
 }

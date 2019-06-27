@@ -1,15 +1,11 @@
 <?php
 /**
- * [PUBLISH] メールフォーム本体
+ * メールフォーム入力欄
+ * 呼出箇所：メールフォーム入力ページ、メールフォーム入力内容確認ページ
  *
- * baserCMS :  Based Website Development Project <http://basercms.net>
- * Copyright (c) baserCMS Users Community <http://basercms.net/community/>
- *
- * @copyright		Copyright (c) baserCMS Users Community
- * @link			http://basercms.net baserCMS Project
- * @package			Mail.View
- * @since			baserCMS v 0.1.0
- * @license			http://basercms.net/license/index.html
+ * @var int $blockStart 表示するフィールドの開始NO
+ * @var int $blockEnd 表示するフィールドの終了NO
+ * @var bool $freezed 確認画面かどうか
  */
 $group_field = null;
 $iteration = 0;
@@ -36,9 +32,9 @@ if (!empty($mailFields)) {
 				}
 				echo '>' . "\n" . '        <th class="col-head" width="150">' . $this->Mailform->label("MailMessage." . $field['field_name'] . "", $field['head']);
 				if ($field['not_empty']) {
-					echo '<span class="required">必須</span>';
+					echo '<span class="required">' . __('必須') . '</span>';
 				} else {
-					echo '<span class="normal">任意</span>';
+					echo '<span class="normal">' . __('任意') . '</span>';
 				}
 				echo '</th>' . "\n" . '        <td class="col-input">';
 			}
@@ -52,8 +48,14 @@ if (!empty($mailFields)) {
 				echo '<span class="mail-before-attachment">' . $field['before_attachment'] . '</span>';
 			}
 
-			if ($field['no_send'] && $freezed) {
-				// メール送信しないフィールドの場合、確認画面では、hidden タグを表示する
+			// =========================================================================================================
+			// 2018/02/06 ryuring
+			// no_send オプションは、確認画面に表示しないようにするために利用されている可能性が高い
+			//（メールアドレスのダブル入力、プライバシーポリシーへの同意に利用されている）
+			// 本来であれば、not_display_confirm 等のオプションを別途準備し、そちらを利用するべきだが、
+			// 後方互換のため残す
+			// =========================================================================================================
+			if ($freezed && $field['no_send']) {
 				echo $this->Mailform->control('hidden', "MailMessage." . $field['field_name'] . "", $this->Mailfield->getOptions($record), $this->Mailfield->getAttributes($record));
 			} else {
 				echo $this->Mailform->control($field['type'], "MailMessage." . $field['field_name'] . "", $this->Mailfield->getOptions($record), $this->Mailfield->getAttributes($record));
@@ -65,28 +67,30 @@ if (!empty($mailFields)) {
 			if (!$freezed) {
 				echo '<span class="mail-attention">' . $field['attention'] . '</span>';
 			}
-			if (!$field['group_valid']) {
-				echo $this->Mailform->error("MailMessage." . $field['field_name']);
-			}
 
 			/* 説明欄 */
-			if (($this->BcArray->last($mailFields, $key)) ||
-				($field['group_field'] != $mailFields[$next_key]['MailField']['group_field']) ||
-				(!$field['group_field'] && !$mailFields[$next_key]['MailField']['group_field']) ||
-				($field['group_field'] != $mailFields[$next_key]['MailField']['group_field'] && $this->BcArray->first($mailFields, $key))) {
-
-				if ($field['group_valid']) {
-					if ($field['valid']) {
-						echo $this->Mailform->error("MailMessage." . $field['group_field'], "必須項目です。");
+			$isGroupValidComplate = in_array('VALID_GROUP_COMPLATE', explode(',', $field['valid_ex']));
+			if(!$isGroupValidComplate) {
+				echo $this->Mailform->error("MailMessage." . $field['field_name']);
+			}
+			$isRequiredToClose = true;
+			if ($this->Mailform->isGroupLastField($mailFields, $field)) {
+				if($isGroupValidComplate) {
+					$groupValidErrors = $this->Mailform->getGroupValidErrors($mailFields, $field['group_valid']);
+					if ($groupValidErrors) {
+						foreach($groupValidErrors as $groupValidError) {
+							echo $groupValidError;
+						}
 					}
-					echo $this->Mailform->error("MailMessage." . $field['group_field'] . "_not_same", "入力データが一致していません。");
-					echo $this->Mailform->error("MailMessage." . $field['group_field'] . "_not_complate", "入力データが不完全です。");
 				}
-
-				echo '</span>';
+				echo $this->Mailform->error("MailMessage." . $field['group_valid'] . "_not_same", __("入力データが一致していません。"));
+				echo $this->Mailform->error("MailMessage." . $field['group_valid'] . "_not_complate", __("入力データが不完全です。"));
+			} elseif(!empty($field['group_field'])) {
+				$isRequiredToClose = false;
+			}
+			echo '</span>';
+			if($isRequiredToClose) {
 				echo "</td>\n    </tr>\n";
-			} else {
-				echo '</span>';
 			}
 			$group_field = $field['group_field'];
 		}

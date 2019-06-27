@@ -22,13 +22,24 @@ if($posts){
 function transformRSS($data) {
 	$view = new View();
 	$blogHelper = new BlogHelper($view);
+	$bcBaserhelper = new BcBaserHelper($view);
+	$url = $bcBaserhelper->getContentsUrl(null, false, null, false) . 'archives/' . $data['BlogPost']['no'];
+	$eyeCatch = [
+		'url' => '',
+		'type' => '',
+		'length' => '',
+	];
+	if (!empty($data['BlogPost']['eye_catch'])) {
+		$eyeCatch['url'] = Router::url($blogHelper->getEyeCatch($data, ['imgsize' => '', 'output' => 'url']), true);
+	}
 	return [
 		'title' => $data['BlogPost']['name'],
-		'link' => '/' . $view->request->params['Content']['name'] . '/archives/' . $data['BlogPost']['no'],
-		'guid' => '/' . $view->request->params['Content']['name'] . '/archives/' . $data['BlogPost']['no'],
+		'link' => $url,
+		'guid' => $url,
 		'category' => $data['BlogCategory']['title'],
 		'description' => $blogHelper->removeCtrlChars($data['BlogPost']['content'] . $data['BlogPost']['detail']),
-		'pubDate' => $data['BlogPost']['posts_date']
+		'pubDate' => $data['BlogPost']['posts_date'],
+		'enclosure' => $eyeCatch,
 	];
 }
 ?>

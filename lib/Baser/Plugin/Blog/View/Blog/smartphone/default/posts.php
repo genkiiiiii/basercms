@@ -29,10 +29,10 @@
 				<?php $class[] = 'last' ?>
 			<?php endif ?>
 			<li class="<?php echo implode(' ', $class) ?>">
-				<?php $this->Blog->postLink($post, '<span class="date">' . $this->Blog->getPostDate($post, 'Y.m.d') . '</span><br />' . '<span class="title">' . $this->Blog->getPostTitle($post, false) . '</span>') ?>
+				<?php $this->Blog->postLink($post, '<span class="date">' . $this->Blog->getPostDate($post, 'Y.m.d') . '</span><br />' . '<span class="title">' . $this->Blog->getPostTitle($post, false) . '</span>', ['escape' => false]) ?>
 			</li>
 		<?php endforeach ?>
 	</ul>
 	<?php else: ?>
-	<p class="no-data">記事がありません</p>
+	<p class="no-data"><?php echo __d('baser', '記事がありません')?></p>
 <?php endif ?>

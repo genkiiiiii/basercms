@@ -282,8 +282,8 @@ class BcBaserHelperTest extends BaserTestCase {
 
 	public function getDescriptionDataProvider() {
 		return [
-			['baserCMS は、CakePHPを利用し、環境準備の素早さに重点を置いた基本開発支援プロジェクトです。WEBサイトに最低限必要となるプラグイン、そしてそのプラグインを組み込みやすい管理画面、認証付きのメンバーマイページを最初から装備しています。'],
-			['baserCMS は、CakePHPを利用し、環境準備の素早さに重点を置いた基本開発支援プロジェクトです。WEBサイトに最低限必要となるプラグイン、そしてそのプラグインを組み込みやすい管理画面、認証付きのメンバーマイページを最初から装備しています。', ''],
+			['baserCMS は、CakePHPを利用し、環境準備の素早さに重点を置いた基本開発支援プロジェクトです。WEBサイトに最低限必要となるプラグイン、そしてそのプラグインを組み込みやすい管理画面、認証付きのメンバーマイページを最初から装備しています。', 'baserCMS は、CakePHPを利用し、環境準備の素早さに重点を置いた基本開発支援プロジェクトです。WEBサイトに最低限必要となるプラグイン、そしてそのプラグインを組み込みやすい管理画面、認証付きのメンバーマイページを最初から装備しています。'],
+			['', ''],
 			['国産オープンソースのホームページです', '国産オープンソースのホームページです']
 		];
 	}
@@ -352,7 +352,8 @@ class BcBaserHelperTest extends BaserTestCase {
 		$this->BcBaser->setTitle('会社沿革');
 		$expected = [
 			['name' => '会社案内', 'url' => '/company/index'],
-			['name' => '会社データ', 'url' => '/company/data']
+			['name' => '会社データ', 'url' => '/company/data'],
+			['name' => '会社沿革', 'url' => '']
 		];
 		$this->assertEquals($expected, $this->BcBaser->getCrumbs(true));
 
@@ -824,7 +825,7 @@ class BcBaserHelperTest extends BaserTestCase {
 
 	public function setSubMenusDataProvider() {
 		return [
-			[['contents'], ['<th>コンテンツ管理メニュー</th>']],
+			[['contents'], ['<th>コンテンツメニュー</th>']],
 			[['editor_templates', 'site_configs'], ['<th>エディタテンプレートメニュー</th>', '<th>システム設定メニュー</th>']],
 			[['tools'], ['<th>ユーティリティメニュー</th>']],
 			[['plugins', 'themes'], ['<th>プラグイン管理メニュー</th>', '<th>テーマ管理メニュー</th>']],
@@ -1139,7 +1140,7 @@ class BcBaserHelperTest extends BaserTestCase {
 		$result = ob_get_clean();
 		$this->assertEquals($expected, $result);
 		// リンクあり
-		$expected = '<a href="/" class="tool-menu">公開ページ</a>';
+		$expected = '<a href="/" class="tool-menu">サイト確認</a>';
 		$this->_View->viewVars['currentUserAuthPrefixes'] = [Configure::read('Routing.prefixes.0')];
 		$this->_View->viewVars['publishLink'] = '/';
 		ob_start();
@@ -1971,16 +1972,24 @@ class BcBaserHelperTest extends BaserTestCase {
  * @return void
  */
 	public function testGoogleAnalytics() {
-		$this->expectOutputRegex('/<script>.*ga\(\'create\', \'hoge\', \'auto\'\)\;/s', $this->BcBaser->googleAnalytics());
+		$this->expectOutputRegex('/<script>.*gtag\(\'config\', \'hoge\'\)\;/s', $this->BcBaser->googleAnalytics());
 	}
 
 /**
  * Google Maps を取得する
  *
  * @return void
+ * タイミングによってTravisCI上でテストが失敗するので一時的にコメントアウト
+ * GoogleAPI側の問題の可能性あり、テスト内容または、処理内容を見直す必要あり
  */
 	public function testGetGoogleMaps() {
-		$this->assertRegExp('/<div id="map"/', $this->BcBaser->getGoogleMaps());
+		for($i=0; $i<3; $i++) {
+			$result = $this->BcBaser->getGoogleMaps();
+			if($result && !preg_match('/^Google Maps を読み込めません。/', $result)) {
+				break;
+			}
+		}
+		$this->assertRegExp('/<div id="map"/', $result);
 	}
 
 /**
@@ -2076,8 +2085,8 @@ class BcBaserHelperTest extends BaserTestCase {
 		$this->assertEquals('example', $params['pass'][0]);
 		$this->assertEquals('test', $params['pass'][1]);
 		$this->assertEquals('value', $params['query']['name']);
-		$this->assertEquals('news/index/example/test?name=value', $params['url']); // _getRequest では、?name=valueが一部として扱われる
-		$this->assertEquals('/news/index/example/test?name=value', $params['here']);
+		$this->assertEquals('news/index/example/test', $params['url']); // _getRequest では、?name=valueが一部として扱われる
+		$this->assertEquals('/news/index/example/test', $params['here']);
 
 		$this->BcBaser->request = $this->_getRequest('/?name=value');
 		$params = $this->BcBaser->getParams();
@@ -2085,8 +2094,8 @@ class BcBaserHelperTest extends BaserTestCase {
 		$this->assertEquals(null, $params['plugin']);
 		$this->assertEquals(['index'], $params['pass']);
 		$this->assertEquals('value', $params['query']['name']);
-		$this->assertEquals('?name=value', $params['url']);
-		$this->assertEquals('/?name=value', $params['here']);
+		$this->assertEquals('', $params['url']);
+		$this->assertEquals('/', $params['here']);
 	}
 
 /**

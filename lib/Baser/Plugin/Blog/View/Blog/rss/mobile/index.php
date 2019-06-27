@@ -22,13 +22,24 @@ if($posts){
 function transformRSS($data) {
 	$view = new View();
 	$blogHelper = new BlogHelper($view);
+	$bcBaserhelper = new BcBaserHelper($view);
+	$url = $bcBaserhelper->getContentsUrl() . 'archives/' . $data['BlogPost']['no'];
+	$eyeCatch = [
+		'url' => '',
+		'type' => '',
+		'length' => '',
+	];
+	if (!empty($data['BlogPost']['eye_catch'])) {
+		$eyeCatch['url'] = Router::url($blogHelper->getEyeCatch($data, ['imgsize' => 'mobile_thumb', 'output' => 'url']), true);
+	}
 	return [
 		'title' => $data['BlogPost']['name'],
-		'link' => Router::url('/' . $this->request->params['Site']['alias'] . '/' . $view->request->params['Content']['name'] . '/archives/' . $data['BlogPost']['no']),
-		'guid' => Router::url('/' . $this->request->params['Site']['alias'] . '/' . $view->request->params['Content']['name'] . '/archives/' . $data['BlogPost']['no']),
+		'link' => $url,
+		'guid' => $url,
 		'category' => $data['BlogCategory']['title'],
 		'description' => $blogHelper->removeCtrlChars($data['BlogPost']['content']),
-		'pubDate' => $data['BlogPost']['posts_date']
+		'pubDate' => $data['BlogPost']['posts_date'],
+		'enclosure' => $eyeCatch,
 	];
 }
 ?>

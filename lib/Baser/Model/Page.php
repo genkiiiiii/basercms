@@ -72,25 +72,32 @@ class Page extends AppModel {
  * @var int
  */
 	private $__pageInsertID = null;
-
+	
 /**
- * バリデーション
+ * Page constructor.
  *
- * @var array
+ * @param bool $id
+ * @param null $table
+ * @param null $ds
  */
-	public $validate = [
-		'id' => [
-			['rule' => 'numeric', 'on' => 'update', 'message' => 'IDに不正な値が利用されています。']
-		],
-		'contents' => [
-			['rule' => 'phpValidSyntax', 'message' => 'PHPの構文エラーが発生しました。'],
-			['rule' => ['maxByte', 64000], 'message' => '本稿欄に保存できるデータ量を超えています。']
-		],
-		'draft' => [
-			['rule' => 'phpValidSyntax', 'message' => 'PHPの構文エラーが発生しました。'],
-			['rule' => ['maxByte', 64000], 'message' => '草稿欄に保存できるデータ量を超えています。']
-		]
-	];
+	public function __construct($id = false, $table = null, $ds = null) {
+		parent::__construct($id, $table, $ds);
+		$this->validate = [
+			'id' => [
+				['rule' => 'numeric', 'on' => 'update', 'message' => __d('baser', 'IDに不正な値が利用されています。')]],
+			'contents' => [
+				['rule' => 'phpValidSyntax', 'allowEmpty' => true, 'message' => __d('baser', '本稿欄でPHPの構文エラーが発生しました。')],
+				['rule' => ['maxByte', 64000], 'allowEmpty' => true, 'message' => __d('baser', '本稿欄に保存できるデータ量を超えています。')],
+				['rule' => 'containsScript', 'allowEmpty' => true, 'message' => __d('baser', '本稿欄でスクリプトの入力は許可されていません。')]],
+			'draft' => [
+				['rule' => 'phpValidSyntax', 'allowEmpty' => true, 'message' => __d('baser', '草稿欄でPHPの構文エラーが発生しました。')],
+				['rule' => ['maxByte', 64000], 'allowEmpty' => true, 'message' => __d('baser', '草稿欄に保存できるデータ量を超えています。')],
+				['rule' => 'containsScript', 'allowEmpty' => true, 'message' => __d('baser', '草稿欄でスクリプトの入力は許可されていません。')]],
+			'code' => [
+				['rule' => 'phpValidSyntax', 'allowEmpty' => true, 'message' => __d('baser', 'PHPの構文エラーが発生しました。')],
+				['rule' => 'containsScript', 'allowEmpty' => true, 'message' => __d('baser', 'スクリプトの入力は許可されていません。')]]
+		];
+	}
 
 /**
  * beforeSave
@@ -165,10 +172,10 @@ class Page extends AppModel {
  */
 	public function afterSave($created, $options = []) {
 
-		$data = $this->data;
-		// タイトルタグと説明文を追加
 		if (empty($data['Page']['id'])) {
-			$data['Page']['id'] = $this->id;
+			$data = $this->read(null, $this->id);
+		} else {
+			$data = $this->read(null, $data['Page']['id']);
 		}
 
 		if ($this->fileSave) {
@@ -193,7 +200,7 @@ class Page extends AppModel {
  * @return array
  */
 	public function createSearchIndex($data) {
-		if (!isset($data['Page']) || !isset($data['Content'])) {
+		if (!isset($data['Page']['id']) || !isset($data['Content']['id'])) {
 			return false;
 		}
 		$page = $data['Page'];
@@ -239,7 +246,7 @@ class Page extends AppModel {
 		}
 		$searchIndex = ['SearchIndex' => [
 			'model_id'	=> $modelId,
-			'type'		=> 'ページ',
+			'type'		=> __d('baser', 'ページ'),
 			'content_id'=> $content['id'],
 			'site_id'=> $content['site_id'],
 			'title'		=> $content['title'],
@@ -723,6 +730,7 @@ class Page extends AppModel {
 		$siteId = $data['Content']['site_id'];
 		$name = $data['Content']['name'];
 		$eyeCatch = $data['Content']['eyecatch'];
+		$description = $data['Content']['description'];
 		unset($data['Page']['id']);
 		unset($data['Page']['created']);
 		unset($data['Page']['modified']);
@@ -733,7 +741,7 @@ class Page extends AppModel {
 			'title'		=> $newTitle,
 			'author_id' => $newAuthorId,
 			'site_id' 	=> $newSiteId,
-			'description' => ''
+			'description' => $description
 		];
 		if(!is_null($newSiteId) && $siteId != $newSiteId) {
 			$data['Content']['site_id'] = $newSiteId;
@@ -743,12 +751,10 @@ class Page extends AppModel {
 		$this->create(['Content' => $data['Content'], 'Page' => $data['Page']]);
 		if ($data = $this->save()) {
 			if ($eyeCatch) {
-				$data['Content']['id'] = $this->Content->getLastInsertID();
 				$data['Content']['eyecatch'] = $eyeCatch;
 				$this->Content->set(['Content' => $data['Content']]);
 				$result = $this->Content->renameToBasenameFields(true);
-				$this->Content->set($result);
-				$result = $this->Content->save();
+				$result = $this->Content->save($result, ['validate' => false, 'callbacks' => false]);
 				$data['Content'] = $result['Content'];
 			}
 
@@ -779,11 +785,12 @@ class Page extends AppModel {
 		if(empty($check[key($check)])) {
 			return true;
 		}
-
+		if(!Configure::read('BcApp.validSyntaxWithPage')) {
+			return true;
+		}
 		if(!function_exists('exec')) {
 			return true;
 		}
-
 		// CL版 php がインストールされてない場合はシンタックスチェックできないので true を返す
 		exec('php --version 2>&1', $output, $exit);
 		if($exit !== 0) {
@@ -808,7 +815,7 @@ class Page extends AppModel {
 		if($exit === 0) {
 			return true;
 		}
-		$message = 'PHPの構文エラーです： ' . PHP_EOL . implode(' ' . PHP_EOL, $output);
+		$message = __d('baser', 'PHPの構文エラーです') . '： ' . PHP_EOL . implode(' ' . PHP_EOL, $output);
 		return $message;
 	}
 
@@ -839,7 +846,7 @@ class Page extends AppModel {
 			if ($searchKey !== false) {
 				unset($pageTemplates[$searchKey]);
 			}
-			$pageTemplates = ['' => '親フォルダの設定に従う（' . $parentTemplate . '）'] + $pageTemplates;
+			$pageTemplates = ['' => sprintf(__d('baser', '親フォルダの設定に従う（%s）'), $parentTemplate)] + $pageTemplates;
 		}
 		return $pageTemplates;
 	}

@@ -17,11 +17,11 @@
 
 
 <tr>
-	<th>サブサイト管理メニュー</th>
+	<th><?php echo __d('baser', 'サブサイト管理メニュー')?></th>
 	<td>
 		<ul class="cleafix">
-			<li><?php $this->BcBaser->link('サブサイト一覧', array('plugin' => '', 'admin' => true, 'controller' => 'sites', 'action' => 'index')) ?></li>
-			<li><?php $this->BcBaser->link('サブサイト新規登録', array('plugin' => '', 'admin' => true, 'controller' => 'sites', 'action' => 'add')) ?></li>
+			<li><?php $this->BcBaser->link(__d('baser', 'サブサイト一覧'), ['plugin' => '', 'admin' => true, 'controller' => 'sites', 'action' => 'index']) ?></li>
+			<li><?php $this->BcBaser->link(__d('baser', 'サブサイト新規登録'), ['plugin' => '', 'admin' => true, 'controller' => 'sites', 'action' => 'add']) ?></li>
 		</ul>
 	</td>
 </tr>

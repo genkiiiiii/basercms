@@ -24,36 +24,36 @@ $this->BcListTable->setColumnNumber(5);
 		<tr>
 			<th class="list-tool">
 	<div>
-		<?php $this->BcBaser->link($this->BcBaser->getImg('admin/btn_add.png', array('width' => 69, 'height' => 18, 'alt' => '新規追加', 'class' => 'btn')), array('action' => 'add', $this->request->params['pass'][0])) ?>
+		<?php $this->BcBaser->link($this->BcBaser->getImg('admin/btn_add.png', ['alt' => __d('baser', '新規追加')]) . __d('baser', '新規追加'), ['action' => 'add', $this->request->params['pass'][0]]) ?>　
 		<?php if (!$sortmode): ?>
-			<?php $this->BcBaser->link($this->BcBaser->getImg('admin/btn_sort.png', array('width' => 65, 'height' => 14, 'alt' => '並び替え', 'class' => 'btn')), array('sortmode' => 1, $this->request->params['pass'][0])) ?>
+			<?php $this->BcBaser->link($this->BcBaser->getImg('admin/btn_sort.png', ['alt' => __d('baser', '並び替え')]) . __d('baser', '並び替え'), ['sortmode' => 1, $this->request->params['pass'][0]]) ?>
 		<?php else: ?>
-			<?php $this->BcBaser->link($this->BcBaser->getImg('admin/btn_normal.png', array('width' => 65, 'height' => 14, 'alt' => 'ノーマル', 'class' => 'btn')), array('sortmode' => 0, $this->request->params['pass'][0])) ?>
+			<?php $this->BcBaser->link($this->BcBaser->getImg('admin/btn_sort.png', ['alt' => __d('baser', 'ノーマル')]) . __d('baser', 'ノーマル'), ['sortmode' => 0, $this->request->params['pass'][0]]) ?>
 		<?php endif ?>
 	</div>
 	<?php if ($this->BcBaser->isAdminUser()): ?>
 		<div>
-			<?php echo $this->BcForm->checkbox('ListTool.checkall', array('title' => '一括選択')) ?>
-			<?php echo $this->BcForm->input('ListTool.batch', array('type' => 'select', 'options' => array('publish' => '有効', 'unpublish' => '無効', 'del' => '削除'), 'empty' => '一括処理')) ?>
-			<?php echo $this->BcForm->button('適用', array('id' => 'BtnApplyBatch', 'disabled' => 'disabled')) ?>
+			<?php echo $this->BcForm->checkbox('ListTool.checkall', ['title' => __d('baser', '一括選択')]) ?>
+			<?php echo $this->BcForm->input('ListTool.batch', ['type' => 'select', 'options' => ['publish' => __d('baser', '有効'), 'unpublish' => __d('baser', '無効'), 'del' => __d('baser', '削除')], 'empty' => __d('baser', '一括処理')]) ?>
+			<?php echo $this->BcForm->button(__d('baser', '適用'), ['id' => 'BtnApplyBatch', 'disabled' => 'disabled']) ?>
 		</div>
 	<?php endif ?>
 </th>
 <th>NO</th>
-<th>ルール名<br />URL設定</th>
-<th>アクセス</th>
+<th><?php echo __d('baser', 'ルール名')?><br><?php echo __d('baser', 'URL設定')?></th>
+<th><?php echo __d('baser', 'アクセス')?></th>
 <?php echo $this->BcListTable->dispatchShowHead() ?>
-<th>登録日<br />更新日</th>
+<th><?php echo __d('baser', '登録日')?><br><?php echo __d('baser', '更新日')?></th>
 </tr>
 </thead>
 <tbody>
 	<?php if (!empty($datas)): ?>
 		<?php foreach ($datas as $data): ?>
-			<?php $this->BcBaser->element('permissions/index_row', array('data' => $data)) ?>
+			<?php $this->BcBaser->element('permissions/index_row', ['data' => $data]) ?>
 		<?php endforeach; ?>
 	<?php else: ?>
 		<tr>
-			<td colspan="<?php echo $this->BcListTable->getColumnNumber() ?>"><p class="no-data">データが見つかりませんでした。</p></td>
+			<td colspan="<?php echo $this->BcListTable->getColumnNumber() ?>"><p class="no-data"><?php echo __d('baser', 'データが見つかりませんでした。')?></p></td>
 		</tr>
 	<?php endif; ?>
 </tbody>

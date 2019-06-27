@@ -12,10 +12,16 @@
 ?>
 
 
+<?php
+$this->BcBaser->i18nScript([
+	'message1' => __d('baser', 'プラグインをアップロードし、そのままインストールします。よろしいですか？'),
+]);
+?>
+
 <script>
 $(function(){
 	$("#BtnSave").click(function(){
-		if(confirm('プラグインをアップロードし、そのままインストールします。よろしいですか？')) {
+		if(confirm(bcI18n.message1)) {
 			$.bcUtil.showLoader();
 			return true;
 		}
@@ -25,12 +31,12 @@ $(function(){
 </script>
 
 
-<p>ZIP 形式のプラグインファイルをお持ちの場合、こちらからアップロードしてインストールできます。</p>
-<?php echo $this->BcForm->create('Plugin', array('type' => 'file')) ?>
+<p><?php echo __d('baser', 'ZIP 形式のプラグインファイルをお持ちの場合、こちらからアップロードしてインストールできます。')?></p>
+<?php echo $this->BcForm->create('Plugin', ['type' => 'file']) ?>
 
 <div class="submit">
-	<?php echo $this->BcForm->file('Plugin.file', array('type' => 'file')) ?>
-	<?php echo $this->BcForm->submit('インストール', array('class' => 'button', 'div' => false, 'id' => 'BtnSave')) ?>
+	<?php echo $this->BcForm->input('Plugin.file', ['type' => 'file']) ?>
+	<?php echo $this->BcForm->submit(__d('baser', 'インストール'), ['class' => 'button', 'div' => false, 'id' => 'BtnSave']) ?>
 </div>
 			
 <?php echo $this->BcForm->end() ?>

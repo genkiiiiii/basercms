@@ -26,19 +26,19 @@ $class = ' class="' . implode(' ', $classies) . '"';
 		'width' => 120,
 		'height'=> 120,
 		'size'	=> 'small',
-		'alt'	=> $file['UploaderFile']['alt'],
+		'alt'	=> h($file['UploaderFile']['alt']),
 		'style' => 'width:120px;height:120px'
 	)) ?>
 	<div style="text-align:right">
-		<span class="id"><?php echo $file['UploaderFile']['id'] ?></span>.<span><?php echo $this->BcText->truncate($file['UploaderFile']['alt'], 13) ?></span>
+		<span class="id"><?php echo $file['UploaderFile']['id'] ?></span>.<span><?php echo $this->BcText->truncate(h($file['UploaderFile']['alt']), 13) ?></span>
 	</div>
 	<span class="name"><?php echo $file['UploaderFile']['name'] ?></span>
 	<div style="text-align:right;margin-top:2px">
-		<span class="created">
-			[公開状態：<?php echo $this->BcText->booleanMark($statusPublish); ?>]&nbsp;<?php echo $this->BcTime->format('Y.m.d',$file['UploaderFile']['created']) ?>
+		<span class="created" style="white-space: nowrap">
+			[<?php echo __d('baser', '公開状態') ?>：<?php echo $this->BcText->booleanMark($statusPublish); ?>]&nbsp;<?php echo $this->BcTime->format('Y.m.d',$file['UploaderFile']['created']) ?>
 		</span>
 	</div>
-	<div class="user-name" style="text-align:right"><span><?php echo $this->BcText->arrayValue($file['UploaderFile']['user_id'], $users) ?></span></div>
+	<div class="user-name" style="text-align:right"><span><?php echo h($this->BcText->arrayValue($file['UploaderFile']['user_id'], $users)) ?></span></div>
 	<div style="display:none">
 		<span class="modified"><?php echo $this->BcTime->format('Y.m.d',$file['UploaderFile']['modified']) ?></span>
 		<span class="small"><?php echo $file['UploaderFile']['small'] ?></span>
@@ -51,6 +51,6 @@ $class = ' class="' . implode(' ', $classies) . '"';
 		<span class="publish-end"><?php echo $this->BcTime->format('Y/m/d', $file['UploaderFile']['publish_end']) ?></span>
 		<span class="publish-end-time"><?php echo $this->BcTime->format('H:i:s', $file['UploaderFile']['publish_end']) ?></span>
 		<span class="uploader-category-id"><?php echo $file['UploaderFile']['uploader_category_id'] ?></span>
-		<span class="alt"><?php echo $file['UploaderFile']['alt'] ?></span>
+		<span class="alt"><?php echo h($file['UploaderFile']['alt']) ?></span>
 	</div>
 </span>

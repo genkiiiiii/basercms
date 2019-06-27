@@ -198,7 +198,7 @@ class BcContentsComponent extends Component {
 		if(BcUtil::isAdminSystem()) {
 			$controller->set('contentsSettings', $this->settings['items']);
 			// パンくずをセット
-			array_unshift($controller->crumbs, ['name' => 'コンテンツ一覧', 'url' => ['plugin' => null, 'controller' => 'contents', 'action' => 'index']]);
+			array_unshift($controller->crumbs, ['name' => __d('baser', 'コンテンツ一覧'), 'url' => ['plugin' => null, 'controller' => 'contents', 'action' => 'index']]);
 			if($controller->subMenuElements && !in_array('contents', $controller->subMenuElements)) {
 				array_unshift($controller->subMenuElements, 'contents');
 			} else {
@@ -234,7 +234,7 @@ class BcContentsComponent extends Component {
  * @param Controller $controller
  * @return void
  */
-	public function settingForm(Controller $controller, $currentSiteId, $currentContentId = null) {
+public function settingForm(Controller $controller, $currentSiteId, $currentContentId = null) {
 
 		// コントロールソースを設定
 		$options = [];
@@ -257,7 +257,7 @@ class BcContentsComponent extends Component {
 			if(in_array($parentTemplate, $templates)) {
 				unset($templates[$parentTemplate]);
 			}
-			array_unshift($templates, ['' => '親フォルダの設定に従う（' . $parentTemplate . '）']);
+			array_unshift($templates, ['' => __d('baser', '親フォルダの設定に従う') . '（' . $parentTemplate . '）']);
 		}
 		$data['Content']['name'] = urldecode($data['Content']['name']);
 		$controller->set('layoutTemplates', $templates);
@@ -270,7 +270,7 @@ class BcContentsComponent extends Component {
 		} else {
 			$mainSiteId = 0;
 		}
-		$siteList = ['' => ''] + $controller->Content->Site->find('list', ['fields' => ['id', 'display_name']]);
+		$siteList = [0 => ''] + $controller->Content->Site->find('list', ['fields' => ['id', 'display_name']]);
 		$controller->set('sites', $siteList);
 		$controller->set('mainSiteDisplayName', $controller->siteConfigs['main_site_display_name']);
 		$data['Site'] = $site['Site'];
@@ -281,9 +281,19 @@ class BcContentsComponent extends Component {
 			$data['Site']['relate_main_site'] && $data['Content']['main_site_content_id'] && $data['Content']['type'] == 'ContentFolder') {
 			$related = true;
 		}
-		$controller->set('related', $related);
+		$disableEditContent = false;
 		$controller->request->data = $data;
-
+		if(!BcUtil::isAdminUser() || ($controller->request->data['Site']['relate_main_site'] && $controller->request->data['Content']['main_site_content_id'] &&
+				($controller->request->data['Content']['alias_id'] || $controller->request->data['Content']['type'] == 'ContentFolder'))) {
+			$disableEditContent = true;
+		}
+		$currentSiteId = $siteId = $controller->request->data['Site']['id'];
+		if(is_null($currentSiteId)) {
+			$currentSiteId = 0;
+		}
+		$controller->set('currentSiteId', $currentSiteId);	
+		$controller->set('disableEditContent', $disableEditContent);
+		$controller->set('related', $related);	
 	}
 
 /**

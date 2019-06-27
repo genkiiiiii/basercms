@@ -26,26 +26,26 @@ class BcTimeHelper extends TimeHelper {
  *
  * @var array
  */
-	public $nengos = array("m" => "明治", "t" => "大正", "s" => "昭和", "h" => "平成");
+	public $nengos = ["m" => "明治", "t" => "大正", "s" => "昭和", "h" => "平成", "r" => "令和"];
 	
 /**
  * 日本語曜日リスト
  *
  * @var array
  */
-	public $jpWeekList = array(0 => '日', 1 => '月', 2 => '火', 3 => '水', 4 => '木', 5 => '金', 6 => '土', 7 => '日');
+	public $jpWeekList = [0 => '日', 1 => '月', 2 => '火', 3 => '水', 4 => '木', 5 => '金', 6 => '土', 7 => '日'];
 
 /**
  * 和暦文字列の正規表現
  *
  * @var string
  */
-	public $warekiRegex = '!^(?<nengo>[mtsh])-(?<year>[0-9]{2})([/\-])(?<month>0?[0-9]|1[0-2])([/\-])(?<day>[0-2][0-9]|3[01])$!';
+	public $warekiRegex = '!^(?<nengo>[mtshr])-(?<year>[0-9]{1,2})([/\-])(?<month>0?[0-9]|1[0-2])([/\-])(?<day>[0-2][0-9]|3[01])$!';
 
 /**
  * 年号を取得
  *
- * @param string $w 年号のローマ字表記の頭文字 m (明治） / t（大正) / s（昭和） / h（平成）
+ * @param string $w 年号のローマ字表記の頭文字 m (明治） / t（大正) / s（昭和） / h（平成） / r（令和）
  * @return string 年号をあらわすアルファベット
  */
 	public function nengo($w) {
@@ -91,19 +91,23 @@ class BcTimeHelper extends TimeHelper {
  */
 	public function convertToWarekiYear($year) {
 		if ($year >= 1868 && $year <= 1911) {
-			return array('m-' . ($year - 1867));
+			return ['m-' . ($year - 1867)];
 		} elseif ($year == 1912) {
-			return array('m-' . ($year - 1867), 't-' . ($year - 1911));
+			return ['m-' . ($year - 1867), 't-' . ($year - 1911)];
 		} elseif ($year >= 1913 && $year <= 1925) {
-			return array('t-' . ($year - 1911));
+			return ['t-' . ($year - 1911)];
 		} elseif ($year == 1926) {
-			return array('t-' . ($year - 1911), 's-' . ($year - 1925));
+			return ['t-' . ($year - 1911), 's-' . ($year - 1925)];
 		} elseif ($year >= 1927 && $year <= 1988) {
-			return array('s-' . ($year - 1925));
+			return ['s-' . ($year - 1925)];
 		} elseif ($year == 1989) {
-			return array('s-' . ($year - 1925), 'h-' . ($year - 1988));
-		} elseif ($year >= 1990) {
-			return array('h-' . ($year - 1988));
+			return ['s-' . ($year - 1925), 'h-' . ($year - 1988)];
+		} elseif ($year >= 1990 && $year <= 2018) {
+			return ['h-' . ($year - 1988)];
+		} elseif ($year == 2019) {
+			return ['h-' . ($year - 1988), 'r-' . ($year - 2018)];
+		} elseif ($year >= 2020) {
+			return ['r-' . ($year - 2018)];
 		} else {
 			return false;
 		}
@@ -130,16 +134,18 @@ class BcTimeHelper extends TimeHelper {
 				return $year + 1925;
 			case 'h':
 				return $year + 1988;
+			case 'r':
+				return $year + 2018;
 			default:
 				return false;
 		}
 	}
 
 /**
- * 和暦変換(配列で返す)
+ * 日付を配列に分解した形で和暦変換する
  *
- * @param string $date 日付
- * @return array 和暦データ
+ * @param string|array $date 文字列形式の日付 (例: '2018/05/28')、または配列形式の和暦データ
+ * @return array|string 配列形式の和暦データ、または日付フォーマットが正しくない場合は空文字
  */
 	public function convertToWarekiArray($date) {
 		if (!$date) {
@@ -171,17 +177,20 @@ class BcTimeHelper extends TimeHelper {
 		} elseif ($ymd >= "19261225" && $ymd <= "19890107") {
 			$w = "s";
 			$y = $y - 1925;
-		} elseif ($ymd >= "19890108") {
+		} elseif ($ymd >= "19890108" && $ymd <= "20190430") {
 			$w = "h";
 			$y = $y - 1988;
+		} elseif ($ymd >= "20190501") {
+			$w = "r";
+			$y = $y - 2018;
 		}
 
-		$dataWareki = array(
+		$dataWareki = [
 			'wareki' => true,
 			'year' => $w . '-' . $y,
 			'month' => $m,
 			'day' => $d
-		);
+		];
 
 		return $dataWareki;
 	}

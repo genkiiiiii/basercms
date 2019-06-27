@@ -56,10 +56,10 @@ class ContentsController extends AppController {
 
 		switch($this->request->action) {
 			case 'admin_index':
-				$this->pageTitle = 'コンテンツ一覧';
+				$this->pageTitle = __d('baser', 'コンテンツ一覧');
 				break;
 			case 'admin_trash_index':
-				$this->pageTitle = 'ゴミ箱';
+				$this->pageTitle = __d('baser', 'ゴミ箱');
 				break;
 		}
 		
@@ -147,7 +147,7 @@ class ContentsController extends AppController {
 		$this->set('contentTypes', $this->BcContents->getTypes());
 		$this->set('authors', $this->User->getUserList());
 		$this->set('folders', $this->Content->getContentFolderList((int) $currentSiteId, ['conditions' => ['Content.site_root' => false]]));
-		$this->set('listTypes', [1 => 'ツリー形式', 2 => '表形式']);
+		$this->set('listTypes', [1 => __d('baser', 'ツリー形式'), 2 => __d('baser', '表形式')]);
 		$this->set('sites', $sites);
 		$this->search = 'contents_index';
 		$this->subMenuElements = ['contents'];
@@ -238,7 +238,7 @@ class ContentsController extends AppController {
  */
 	public function admin_ajax_trash_return() {
 		if(empty($this->request->data['id'])) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		$this->autoRender = false;
 
@@ -265,7 +265,7 @@ class ContentsController extends AppController {
 	public function admin_add($alias = false) {
 
 		if(!$this->request->data) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		$srcContent = [];
@@ -297,14 +297,14 @@ class ContentsController extends AppController {
 		if($data) {
 			if($alias) {
 				$message = Configure::read('BcContents.items.' . $this->request->data['Content']['plugin'] . '.' . $this->request->data['Content']['type'] . '.title') .
-					'「' . $srcContent['title'] . '」のエイリアス「' . $this->request->data['Content']['title'] . '」を追加しました。';
+					sprintf(__d('baser', '「%s」のエイリアス「%s」を追加しました。'), $srcContent['title'], $this->request->data['Content']['title']);
 			} else {
 				$message = Configure::read('BcContents.items.' . $this->request->data['Content']['plugin'] . '.' . $this->request->data['Content']['type'] . '.title') . '「' . $this->request->data['Content']['title'] . '」を追加しました。';
 			}
 			$this->setMessage($message, false, true, false);
 			echo json_encode($data['Content']);
 		} else {
-			$this->ajaxError(500, '保存中にエラーが発生しました。');
+			$this->ajaxError(500, __d('baser', '保存中にエラーが発生しました。'));
 		}
 		exit();
 	}
@@ -315,16 +315,17 @@ class ContentsController extends AppController {
  * @return void
  */
 	public function admin_edit() {
-		$this->pageTitle = 'コンテンツ編集';
+		$this->pageTitle = __d('baser', 'コンテンツ編集');
 		if(!$this->request->data) {
 			$this->request->data = $this->Content->find('first', ['conditions' => ['Content.id' => $this->request->params['named']['content_id']]]);
 			if(!$this->request->data) {
-				$this->setMessage('無効な処理です。', true);
+				$this->setMessage(__d('baser', '無効な処理です。'), true);
 				$this->redirect(['plugin' => false, 'admin' => true, 'controller' => 'contents', 'action' => 'index']);
 			}
 		} else {
 			if($this->Content->save($this->request->data)) {
-				$message = Configure::read('BcContents.items.' . $this->request->data['Content']['plugin'] . '.' . $this->request->data['Content']['type'] . '.title') . '「' . $this->request->data['Content']['title'] . '」を更新しました。';
+				$message = Configure::read('BcContents.items.' . $this->request->data['Content']['plugin'] . '.' . $this->request->data['Content']['type'] . '.title') . 
+					sprintf(__d('baser', '「%s」を更新しました。'), $this->request->data['Content']['title']);
 				$this->setMessage($message, false, true);
 				$this->redirect([
 					'plugin'	=> null,
@@ -334,10 +335,11 @@ class ContentsController extends AppController {
 					'parent_id' => $this->request->params['named']['parent_id']
 				]);
 			} else {
-				$this->setMessage('保存中にエラーが発生しました。入力内容を確認してください。', true, true);
+				$this->setMessage(__d('baser', '保存中にエラーが発生しました。入力内容を確認してください。'), true, true);
 			}
 		}
-		$this->set('publishLink', $this->request->data['Content']['url']);
+		$site = BcSite::findById($this->request->data['Content']['site_id']);
+		$this->set('publishLink', $this->Content->getUrl($this->request->data['Content']['url'], true, $site->useSubDomain));
 	}
 
 	/**
@@ -348,11 +350,11 @@ class ContentsController extends AppController {
 	 */
 	public function admin_edit_alias($id) {
 
-		$this->pageTitle = 'エイリアス編集';
+		$this->pageTitle = __d('baser', 'エイリアス編集');
 		if(!$this->request->data) {
 			$this->request->data = $this->Content->find('first', ['conditions' => ['Content.id' => $id]]);
 			if(!$this->request->data) {
-				$this->setMessage('無効な処理です。', true);
+				$this->setMessage(__d('baser', '無効な処理です。'), true);
 				$this->redirect(['plugin' => false, 'admin' => true, 'controller' => 'contents', 'action' => 'index']);
 			}
 			$srcContent = $this->Content->find('first', ['conditions' => ['Content.id' => $this->request->data['Content']['alias_id']], 'recursive' => -1]);
@@ -362,7 +364,7 @@ class ContentsController extends AppController {
 				$srcContent = $this->Content->find('first', ['conditions' => ['Content.id' => $this->request->data['Content']['alias_id']], 'recursive' => -1]);
 				$srcContent = $srcContent['Content'];
 				$message = Configure::read('BcContents.items.' . $srcContent['plugin'] . '.' . $srcContent['type'] . '.title') .
-					'「' . $srcContent['title'] . '」のエイリアス「' . $this->request->data['Content']['title'] . '」を編集しました。';
+					sprintf(__d('baser', '「%s」のエイリアス「%s」を編集しました。'), $srcContent['title'], $this->request->data['Content']['title']);
 				$this->setMessage($message, false, true);
 				$this->redirect([
 					'plugin'	=> null,
@@ -371,14 +373,15 @@ class ContentsController extends AppController {
 					$id
 				]);
 			} else {
-				$this->setMessage('保存中にエラーが発生しました。入力内容を確認してください。', true, true);
+				$this->setMessage(__d('baser', '保存中にエラーが発生しました。入力内容を確認してください。'), true, true);
 			}
 
 		}
 
 		$this->set('srcContent', $srcContent);
 		$this->BcContents->settingForm($this, $this->request->data['Content']['site_id'], $this->request->data['Content']['id']);
-		$this->set('publishLink', $this->request->data['Content']['url']);
+		$site = BcSite::findById($this->request->data['Content']['site_id']);
+		$this->set('publishLink', $this->Content->getUrl($this->request->data['Content']['url'], true, $site->useSubDomain));
 
 	}
 
@@ -390,12 +393,12 @@ class ContentsController extends AppController {
 	public function admin_ajax_delete() {
 		$this->autoRender = false;
 		if(empty($this->request->data['contentId'])) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		if($this->_delete($this->request->data['contentId'], false)) {
 			return true;
 		} else {
-			$this->ajaxError(500, '削除中にエラーが発生しました。');
+			$this->ajaxError(500, __d('baser', '削除中にエラーが発生しました。'));
 		}
 		return false;
 	}
@@ -410,7 +413,7 @@ class ContentsController extends AppController {
 		if($this->_delete($this->request->data['Content']['id'], true)) {
 			$this->redirect(['plugin' => false, 'admin' => true, 'controller' => 'contents', 'action' => 'index']);
 		} else {
-			$this->setMessage('削除中にエラーが発生しました。', true, true);
+			$this->setMessage(__d('baser', '削除中にエラーが発生しました。'), true, true);
 		}
 	}
 
@@ -439,13 +442,13 @@ class ContentsController extends AppController {
 		
 		if(!$content['alias_id']) {
 			$result = $this->Content->softDeleteFromTree($id);
-			$message = $typeName . '「' . $content['title'] . '」をゴミ箱に移動しました。';
+			$message = $typeName . sprintf(__d('baser', '「%s」をゴミ箱に移動しました。'), $content['title']);
 		} else {
 			$softDelete = $this->Content->softDelete(null);
 			$this->Content->softDelete(false);
 			$result = $this->Content->removeFromTree($id, true);
 			$this->Content->softDelete($softDelete);
-			$message = $typeName . 'のエイリアス「' . $content['title'] . '」を削除しました。';
+			$message = sprintf(__d('baser', '%s のエイリアス「%s」を削除しました。'), $typeName, $content['title']);
 		}
 		if($result) {
 			$this->setMessage($message, false, true, $useFlashMessage);
@@ -515,7 +518,7 @@ class ContentsController extends AppController {
 	public function admin_ajax_change_status() {
 		$this->autoRender = false;
 		if(!$this->request->data) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		switch($this->request->data['status']) {
 			case 'publish':
@@ -626,7 +629,7 @@ class ContentsController extends AppController {
 	public function admin_ajax_rename() {
 		$this->autoRender = false;
 		if(!$this->request->data) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		$data = ['Content' => [
 			'id'		=> $this->request->data['id'],
@@ -637,12 +640,12 @@ class ContentsController extends AppController {
 		]];
 		if($this->Content->save($data, ['firstCreate' => !empty($this->request->data['first'])])) {
 			$message = Configure::read('BcContents.items.' . $this->request->data['plugin'] . '.' . $this->request->data['type'] . '.title') .
-						'「' . $this->request->data['oldTitle'] . '」を「' . $this->request->data['newTitle'] . '」に名称変更しました。';
+						sprintf(__d('baser', '「%s」を「%s」に名称変更しました。'), $this->request->data['oldTitle'], $this->request->data['newTitle']);
 			$this->setMessage($message, false, true, false);
 			Configure::write('debug', 0);
 			return $this->Content->getUrlById($this->Content->id);
 		} else {
-			$this->ajaxError(500, '名称変更中にエラーが発生しました。');
+			$this->ajaxError(500, __d('baser', '名称変更中にエラーが発生しました。'));
 		}
 		return false;
 	}
@@ -654,19 +657,19 @@ class ContentsController extends AppController {
 
 		$this->autoRender = false;
 		if(!$this->request->data) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		$this->Content->id = $this->request->data['currentId'];
 		if (!$this->Content->exists()) {
-			$this->ajaxError(500, 'データが存在しません。');
+			$this->ajaxError(500, __d('baser', 'データが存在しません。'));
 		}
 
 		if($this->SiteConfig->isChangedContentsSortLastModified($this->request->data['listDisplayed'])) {
-			$this->ajaxError(500, "コンテンツ一覧を表示後、他のログインユーザーがコンテンツの並び順を更新しました。<br>一度リロードしてから並び替えてください。");
+			$this->ajaxError(500, __d('baser', 'コンテンツ一覧を表示後、他のログインユーザーがコンテンツの並び順を更新しました。<br>一度リロードしてから並び替えてください。'));
 		}
 		
 		if(!$this->Content->isMovable($this->request->data['currentId'], $this->request->data['targetParentId'])) {
-			$this->ajaxError(500, "同一URLのコンテンツが存在するため処理に失敗しました。");
+			$this->ajaxError(500, __d('baser', '同一URLのコンテンツが存在するため処理に失敗しました。'));
 		}
 		
 		// EVENT Contents.beforeMove
@@ -686,7 +689,6 @@ class ContentsController extends AppController {
 			$data['targetId']
 		);
 
-		
 		if($data['currentParentId'] == $data['targetParentId']) {
 			// 親が違う場合は、Contentモデルで更新してくれるが同じ場合更新しない仕様の為ここで更新する
 			$this->SiteConfig->updateContentsSortLastModified();	
@@ -701,7 +703,7 @@ class ContentsController extends AppController {
 			
 			return json_encode($this->Content->getUrlById($result['Content']['id'], true));
 		} else {
-			$this->ajaxError(500, 'データ保存中にエラーが発生しました。');
+			$this->ajaxError(500, __d('baser', 'データ保存中にエラーが発生しました。'));
 		}
 
 	}
@@ -714,7 +716,7 @@ class ContentsController extends AppController {
 	public function admin_exists_content_by_url() {
 		$this->autoRender = false;
 		if(!$this->request->data['url']) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		Configure::write('debug', 0);
 		return $this->Content->existsContentByUrl($this->request->data['url']);

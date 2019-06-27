@@ -57,13 +57,14 @@ class PluginsController extends AppController {
 	public $subMenuElements = [];
 
 /**
- * ぱんくずナビ
- *
- * @var array
+ * Before Filter 
  */
-	public $crumbs = [
-		['name' => 'プラグイン管理', 'url' => ['plugin' => '', 'controller' => 'plugins', 'action' => 'index']]
-	];
+	public function beforeFilter() {
+		parent::beforeFilter();
+		$this->crumbs = [
+			['name' => __d('baser', 'プラグイン管理'), 'url' => ['plugin' => '', 'controller' => 'plugins', 'action' => 'index']]
+		];
+	}
 
 /**
  * プラグインをアップロードしてインストールする
@@ -71,7 +72,7 @@ class PluginsController extends AppController {
  * @return void
  */
 	public function admin_add() {
-		$this->pageTitle = 'プラグインアップロード';
+		$this->pageTitle = __d('baser', 'プラグインアップロード');
 		$this->subMenuElements = ['plugins'];
 
 		//データなし
@@ -81,7 +82,7 @@ class PluginsController extends AppController {
 
 		//アップロード失敗
 		if (empty($this->request->data['Plugin']['file']['tmp_name'])) {
-			$this->setMessage('ファイルのアップロードに失敗しました。', true);
+			$this->setMessage(__d('baser', 'ファイルのアップロードに失敗しました。'), true);
 			return;
 		}
 
@@ -90,8 +91,8 @@ class PluginsController extends AppController {
 		App::uses('BcZip', 'Lib');
 		$BcZip = new BcZip();
 		if (!$BcZip->extract(TMP . $zippedName, APP . 'Plugin' . DS)) {
-			$msg = 'アップロードしたZIPファイルの展開に失敗しました。';
-			$msg .= '<br />' . $BcZip->error;
+			$msg = __d('baser', 'アップロードしたZIPファイルの展開に失敗しました。');
+			$msg .= "\n" . $BcZip->error;
 			$this->setMessage($msg, true);
 			$this->redirect(['action' => 'add']);
 			return;
@@ -115,16 +116,8 @@ class PluginsController extends AppController {
 			]);
 		}
 		unlink(TMP . $zippedName);
-
-		// プラグインをインストール
-		if ($this->BcManager->installPlugin($plugin)) {
-			clearAllCache();
-			$this->setMessage('新規プラグイン「' . $plugin . '」を baserCMS に登録しました。', false, true);
-			$this->Plugin->addFavoriteAdminLink($plugin, $this->BcAuth->user());
-			$this->redirect(['action' => 'index']);
-		} else {
-			$this->setMessage('プラグインに問題がある為インストールを完了できません。プラグインの開発者に確認してください。', true);
-		}
+		$this->setMessage(sprintf(__d('baser', '新規プラグイン「%s」を追加しました。'), $plugin), false, true);
+		$this->redirect(['action' => 'index']);
 	}
 
 /**
@@ -181,7 +174,7 @@ class PluginsController extends AppController {
 		}
 
 		$this->subMenuElements = ['plugins'];
-		$this->pageTitle = 'プラグイン一覧';
+		$this->pageTitle = __d('baser', 'プラグイン一覧');
 		$this->help = 'plugins_index';
 	}
 
@@ -234,10 +227,10 @@ class PluginsController extends AppController {
 				Configure::write('debug', 0);
 				return true;
 			} else {
-				$this->ajaxError(500, '一度リロードしてから再実行してみてください。');
+				$this->ajaxError(500, __d('baser', '一度リロードしてから再実行してみてください。'));
 			}
 		} else {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 		return false;
 	}
@@ -250,12 +243,12 @@ class PluginsController extends AppController {
 	public function admin_ajax_delete_file($pluginName) {
 		$this->_checkSubmitToken();
 		if (!$pluginName) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		$pluginName = urldecode($pluginName);
 		$this->__deletePluginFile($pluginName);
-		$this->Plugin->saveDbLog('プラグイン「' . $pluginName . '」 を完全に削除しました。');
+		$this->Plugin->saveDbLog(sprintf(__d('baser', 'プラグイン「%s」 を完全に削除しました。'), $pluginName));
 		exit(true);
 	}
 
@@ -352,15 +345,14 @@ class PluginsController extends AppController {
 		} else {
 			// プラグインをインストール
 			if ($this->BcManager->installPlugin($this->request->data['Plugin']['name'])) {
-				clearAllCache();
-				$this->setMessage('新規プラグイン「' . $name . '」を baserCMS に登録しました。', false, true);
+				$this->setMessage(sprintf(__d('baser', '新規プラグイン「%s」を baserCMS に登録しました。'), $name), false, true);
 
 				$this->Plugin->addFavoriteAdminLink($name, $this->BcAuth->user());
 				$this->_addPermission($this->request->data);
 
 				$this->redirect(['action' => 'index']);
 			} else {
-				$this->setMessage('プラグインに問題がある為インストールを完了できません。プラグインの開発者に確認してください。', true);
+				$this->setMessage(__d('baser', 'プラグインに問題がある為インストールを完了できません。プラグインの開発者に確認してください。'), true);
 			}
 		}
 
@@ -368,7 +360,7 @@ class PluginsController extends AppController {
 		$this->set('installMessage', $installMessage);
 		$this->set('dbInited', $dbInited);
 		$this->subMenuElements = ['plugins'];
-		$this->pageTitle = '新規プラグイン登録';
+		$this->pageTitle = __d('baser', '新規プラグイン登録');
 		$this->help = 'plugins_form';
 		$this->render('form');
 	}
@@ -398,7 +390,7 @@ class PluginsController extends AppController {
 					case 1:
 						if (!$permission) {
 							$Permission->create([
-								'name'			=> $data['Plugin']['title'] . '管理',
+								'name'			=> $data['Plugin']['title'] . ' '. __d('baser', '管理'),
 								'user_group_id'	=> $userGroup['UserGroup']['id'],
 								'auth'			=> true,
 								'status'		=> true,
@@ -426,7 +418,7 @@ class PluginsController extends AppController {
  */
 	public function admin_reset_db() {
 		if (!$this->request->data) {
-			$this->setMessage('無効な処理です。', true);
+			$this->setMessage(__d('baser', '無効な処理です。'), true);
 		} else {
 			$data = $this->Plugin->find('first', ['conditions' => ['name' => $this->request->data['Plugin']['name']]]);
 			$this->Plugin->resetDb($this->request->data['Plugin']['name']);
@@ -437,10 +429,10 @@ class PluginsController extends AppController {
 			if ($this->Plugin->save()) {
 				clearAllCache();
 				$this->BcAuth->relogin();
-				$this->setMessage($data['Plugin']['title'] . ' プラグインのデータを初期化しました。', false, true);
+				$this->setMessage(sprintf(__d('baser', '%s プラグインのデータを初期化しました。'), $data['Plugin']['title']), false, true);
 				$this->redirect(['action' => 'install', $data['Plugin']['name']]);
 			} else {
-				$this->setMessage('処理中にエラーが発生しました。プラグインの開発者に確認してください。', true);
+				$this->setMessage(__d('baser', '処理中にエラーが発生しました。プラグインの開発者に確認してください。'), true);
 			}
 		}
 	}
@@ -455,12 +447,12 @@ class PluginsController extends AppController {
 		$this->_checkSubmitToken();
 		/* 除外処理 */
 		if (!$name) {
-			$this->ajaxError(500, '無効な処理です。');
+			$this->ajaxError(500, __d('baser', '無効な処理です。'));
 		}
 
 		if ($this->BcManager->uninstallPlugin($name)) {
 			clearAllCache();
-			$this->Plugin->saveDbLog('プラグイン「' . $name . '」 を 無効化しました。');
+			$this->Plugin->saveDbLog(sprintf(__d('baser', 'プラグイン「%s」 を 無効化しました。'), $name));
 			exit(true);
 		}
 
@@ -478,7 +470,7 @@ class PluginsController extends AppController {
 			foreach ($ids as $id) {
 				$data = $this->Plugin->read(null, $id);
 				if ($this->BcManager->uninstallPlugin($data['Plugin']['name'])) {
-					$this->Plugin->saveDbLog('プラグイン「' . $data['Plugin']['title'] . '」 を 無効化しました。');
+					$this->Plugin->saveDbLog(sprintf(__d('baser', 'プラグイン「%s」 を 無効化しました。'), $data['Plugin']['title']));
 				}
 			}
 			clearAllCache();
