@@ -13,6 +13,9 @@
 /**
  * [管理画面] サイト設定 フォーム
  * @var BcAppView $this
+ * @var array $disableSettingInstallSetting install.php について、 disabled を設定するかどうか
+ * @var array $themes テーマ一覧
+ * @var bool $safeModeOn セーフモードかどうか
  */
 $this->BcBaser->i18nScript([
     'alertMessage1' => __d('baser', '管理システムをSSLに切り替える場合には、SSL用のURLを登録してください。'),
@@ -73,7 +76,7 @@ $this->BcBaser->js('admin/site_configs/form', false, ['id' => 'AdminSiteConfigsF
 		<td class="col-input"><?php echo $this->BcForm->input('SiteConfig.keyword', ['type' => 'text', 'size' => 55, 'maxlength' => 255, 'counter' => true, 'class' => 'full-width']) ?>
 			<?php echo $this->Html->image('admin/icn_help.png', ['id' => 'helpKeyword', 'class' => 'btn help', 'alt' => __d('baser', 'ヘルプ')]) ?>
 			<?php echo $this->BcForm->error('SiteConfig.keyword') ?>
-			<div id="helptextKeyword" class="helptext"><?php echo __d('baser', 'テンプレートで利用する場合は、<br />&lt;?php $this->BcBaser->keywords() ?&gt; で出力します。')?></div>
+			<div id="helptextKeyword" class="helptext"><?php echo __d('baser', 'テンプレートで利用する場合は、<br />&lt;?php $this->BcBaser->metaKeywords() ?&gt; で出力します。')?></div>
 		</td>
 	</tr>
 	<tr>
@@ -81,7 +84,7 @@ $this->BcBaser->js('admin/site_configs/form', false, ['id' => 'AdminSiteConfigsF
 		<td class="col-input"><?php echo $this->BcForm->input('SiteConfig.description', ['type' => 'textarea', 'cols' => 36, 'rows' => 5, 'counter' => true]) ?>
 			<?php echo $this->Html->image('admin/icn_help.png', ['id' => 'helpDescription', 'class' => 'btn help', 'alt' => __d('baser', 'ヘルプ')]) ?>
 			<?php echo $this->BcForm->error('SiteConfig.description') ?>
-			<div id="helptextDescription" class="helptext"><?php echo __d('baser', 'テンプレートで利用する場合は、<br />&lt;?php $this->BcBaser->description() ?&gt; で出力します')?></div>
+			<div id="helptextDescription" class="helptext"><?php echo __d('baser', 'テンプレートで利用する場合は、<br />&lt;?php $this->BcBaser->metaDescription() ?&gt; で出力します')?></div>
 		</td>
 	</tr>
 	<tr>
@@ -119,7 +122,7 @@ $this->BcBaser->js('admin/site_configs/form', false, ['id' => 'AdminSiteConfigsF
 <h2 class="btn-slide-form"><a href="javascript:void(0)" id="formOption"><?php echo __d('baser', 'オプション')?></a></h2>
 
 <div id ="formOptionBody" class="slide-body section">
-	<table cellpadding="0" cellspacing="0" class="form-table">
+	<table class="form-table">
 		<tr>
 			<th class="col-head"><?php echo $this->BcForm->label('SiteConfig.login_credit', __d('baser', 'ログインページのクレジット表示')) ?></th>
 			<td class="col-input">
@@ -242,7 +245,7 @@ $this->BcBaser->js('admin/site_configs/form', false, ['id' => 'AdminSiteConfigsF
 
 	<h2><?php echo __d('baser', 'エディタ設定関連')?></h2>
 
-	<table cellpadding="0" cellspacing="0" class="form-table">
+	<table class="form-table">
 		<tr>
 			<th class="col-head"><?php echo $this->BcForm->label('SiteConfig.editor_enter_br', __d('baser', 'エディタタイプ')) ?></th>
 			<td class="col-input">
@@ -292,7 +295,7 @@ h2 {}
 
 	<h2><?php echo __d('baser', 'メール設定関連')?></h2>
 
-	<table cellpadding="0" cellspacing="0" class="form-table">
+	<table class="form-table">
 		<tr>
 			<th><?php echo $this->BcForm->label('SiteConfig.mail_encode', __d('baser', 'メール送信文字コード')) ?></th>
 			<td class="col-input">
@@ -344,8 +347,17 @@ h2 {}
 				</div>
 				<p>
 					<?php echo $this->BcForm->button(__d('baser', 'メール送信テスト'), ['type' => 'button', 'class' => 'button-small', 'id' => 'BtnCheckSendmail']) ?>　<span id=ResultCheckSendmail></span>
-					<?php echo $this->BcBaser->img('admin/ajax-loader-s.gif', ['id' => 'AjaxLoaderCheckSendmail', 'style' => 'display:none']) ?>
+					<?php $this->BcBaser->img('admin/ajax-loader-s.gif', ['id' => 'AjaxLoaderCheckSendmail', 'style' => 'display:none']) ?>
 				</p>
+			</td>
+		</tr>
+		<tr>
+			<th><?php echo $this->BcForm->label('SiteConfig.mail_additional_parameters', __d('baser', 'additional_parameters（オプション）')) ?></th>
+			<td class="col-input">
+				<?php echo $this->BcForm->input('SiteConfig.mail_additional_parameters', ['type' => 'input', 'size' => 35, 'maxlength' => 255, 'placeholder' => '-f webmaster@mail.example.com']) ?>
+				<?php echo $this->Html->image('admin/icn_help.png', ['id' => 'helpEncode', 'class' => 'btn help', 'alt' => __d('baser', 'ヘルプ')]) ?>
+				<div class="helptext"><?php echo __d('baser', '標準機能によるメール送信時にオプションを追加します。')?></div>
+				<?php echo $this->BcForm->error('SiteConfig.mail_additional_parameters') ?>
 			</td>
 		</tr>
 		<?php echo $this->BcForm->dispatchAfterForm('option') ?>

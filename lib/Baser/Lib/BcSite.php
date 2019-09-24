@@ -291,6 +291,7 @@ class BcSite {
 			return self::$_sites;
 		}
 		try{
+			/* @var Site $Site */
 			$Site = ClassRegistry::init('Site');
 		} catch(Exception $e) {
 			return [];
@@ -392,8 +393,13 @@ class BcSite {
  */
 	public function existsUrl(CakeRequest $request) {
 		$url = $this->makeUrl($request);
+		/* @var Content $Content */
 		$Content = ClassRegistry::init('Content');
-		return $Content->existsPublishUrl($url);
+		if($Content->findByUrl($url, true, false, $this->sameMainUrl, $this->useSubDomain) || 
+			$Content->findByUrl($url, true, true, $this->sameMainUrl, $this->useSubDomain)) {
+			return true;
+		} 
+		return false;
 	}
 
 /**

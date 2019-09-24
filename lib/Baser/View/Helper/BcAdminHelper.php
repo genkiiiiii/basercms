@@ -157,8 +157,14 @@ class BcAdminHelper extends AppHelper {
 					}
 				}
 			}
-			$adminMenuGroup['menus'] = $covertedAdminMenus;
-			$covertedAdminMenuGroups[] = $adminMenuGroup;
+			if($covertedAdminMenus) {
+				$adminMenuGroup['menus'] = $covertedAdminMenus;
+			} else {
+				$adminMenuGroup['menus'] = [];
+			}
+			if($adminMenuGroup['url'] || $adminMenuGroup['menus']) {
+				$covertedAdminMenuGroups[] = $adminMenuGroup;
+			}
 		}
 
 		if($currentOn === false) {

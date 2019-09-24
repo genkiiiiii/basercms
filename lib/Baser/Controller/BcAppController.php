@@ -865,10 +865,12 @@ class BcAppController extends Controller {
 		 * CakeEmailでは、return-path の正しい設定のためには additionalParameters を設定する必要がある
 		 * @url http://norm-nois.com/blog/archives/2865
 		 */
+		if (!empty($this->siteConfigs['mail_additional_parameters'])) {
+			$config = Hash::merge($config, ['additionalParameters' => $this->siteConfigs['mail_additional_parameters']]);
+		}
 		if (!empty($options['additionalParameters'])) {
 			$config = Hash::merge($config, ['additionalParameters' => $options['additionalParameters']]);
 		}
-
 		$cakeEmail = new CakeEmail($config);
 
 		// charset
@@ -1018,10 +1020,8 @@ class BcAppController extends Controller {
 		//Return-Path
 		if (!empty($options['returnPath'])) {
 			$returnPath = $options['returnPath'];
-		} else {
-			$returnPath = $from;
+			$cakeEmail->returnPath($returnPath);
 		}
-		$cakeEmail->returnPath($returnPath);
 
 		//$sender
 		if (!empty($options['sender'])) {
